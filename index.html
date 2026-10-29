@@ -1,0 +1,1564 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LMS Interactive - Aplikasi Limit Fungsi | SMAN 2 Tasikmalaya</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for math plotting -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- MathJax for rendering math symbols -->
+    <script id="mathjax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <!-- html2pdf.js for generating PDF reports -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brandBlue: '#1e3a8a',
+                        brandYellow: '#eab308',
+                        brandDark: '#0f172a',
+                        mathAccent: '#3b82f6',
+                        pptPurple: '#4c1d95',
+                        pptGold: '#f59e0b'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0b1329;
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+
+        /* Math Grid Background Pattern */
+        .math-bg {
+            background-color: #0b1329;
+            background-image: 
+                radial-gradient(rgba(59, 130, 246, 0.15) 1px, transparent 1px),
+                linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 24px 24px, 48px 48px, 48px 48px;
+        }
+
+        /* Floating Formula Watermark Overlay */
+        .math-symbols-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.05;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 200 200'%3E%3Ctext x='20' y='40' fill='%23ffffff' font-size='20' font-family='serif'%3Elim x%E2%86%92%E2%88%9E%3C/text%3E%3Ctext x='110' y='80' fill='%23ffffff' font-size='22' font-family='serif'%3E%E2%88%AB f(x)dx%3C/text%3E%3Ctext x='25' y='130' fill='%23ffffff' font-size='20' font-family='serif'%3E%E2%88%82f/%E2%88%82x%3C/text%3E%3Ctext x='110' y='170' fill='%23ffffff' font-size='18' font-family='serif'%3E%E2%88%91 (x%C2%B2-16)%3C/text%3E%3C/svg%3E");
+        }
+
+        /* Glassmorphism Card Effect */
+        .glass-card {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .ppt-card {
+            background: linear-gradient(135deg, rgba(30, 27, 75, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        /* Fixed Footer Watermark MANDATORY */
+        .author-watermark {
+            position: fixed;
+            bottom: 12px;
+            right: 16px;
+            z-index: 9999;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(245, 158, 11, 0.5);
+            padding: 6px 14px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #facc15;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+            pointer-events: none;
+            letter-spacing: 0.5px;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3b82f6;
+        }
+
+        /* ===== TEMA CERAH (default) - tombol di kiri bawah untuk beralih ===== */
+        body.theme-light { color: #1e293b; }
+        body.theme-light.math-bg {
+            background-color: #f3f8ff;
+            background-image:
+                radial-gradient(circle at 8% 0%, rgba(167,139,250,0.22), transparent 38%),
+                radial-gradient(circle at 95% 8%, rgba(251,191,36,0.20), transparent 34%),
+                radial-gradient(circle at 50% 100%, rgba(56,189,248,0.16), transparent 40%),
+                radial-gradient(rgba(59,130,246,0.14) 1px, transparent 1px),
+                linear-gradient(to right, rgba(30,58,138,0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(30,58,138,0.05) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 100% 100%, 24px 24px, 48px 48px, 48px 48px;
+            background-attachment: fixed;
+        }
+        body.theme-light .math-symbols-overlay { opacity: 0.07; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 200 200'%3E%3Ctext x='20' y='40' fill='%231e3a8a' font-size='20' font-family='serif'%3Elim x%E2%86%92%E2%88%9E%3C/text%3E%3Ctext x='110' y='80' fill='%231e3a8a' font-size='22' font-family='serif'%3E%E2%88%AB f(x)dx%3C/text%3E%3Ctext x='25' y='130' fill='%231e3a8a' font-size='20' font-family='serif'%3E%E2%88%82f/%E2%88%82x%3C/text%3E%3Ctext x='110' y='170' fill='%231e3a8a' font-size='18' font-family='serif'%3E%E2%88%91 (x%C2%B2-16)%3C/text%3E%3C/svg%3E"); }
+        body.theme-light .glass-card { background: rgba(255,255,255,0.88); border: 1px solid rgba(30,58,138,0.10); box-shadow: 0 8px 28px rgba(30,58,138,0.08); }
+        body.theme-light .ppt-card { background: linear-gradient(135deg, #f5f3ff 0%, #ffffff 55%, #fffbeb 100%); border: 1px solid rgba(245,158,11,0.45); }
+        body.theme-light #main-nav, body.theme-light #syntax-stepper-bar { background: rgba(255,255,255,0.94); }
+        body.theme-light .author-watermark { background: rgba(255,255,255,0.95); color: #b45309; border-color: rgba(245,158,11,0.6); box-shadow: 0 4px 16px rgba(30,58,138,0.12); }
+        body.theme-light ::-webkit-scrollbar-track { background: #e2e8f0; }
+        body.theme-light ::-webkit-scrollbar-thumb { background: #94a3b8; }
+        .theme-toggle { position: fixed; bottom: 12px; left: 16px; z-index: 9999; padding: 6px 14px; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; cursor: pointer;
+            background: rgba(15,23,42,0.9); color: #facc15; border: 1px solid rgba(245,158,11,0.5); }
+        body.theme-light .theme-toggle { background: rgba(255,255,255,0.95); color: #1e3a8a; border-color: rgba(30,58,138,0.25); box-shadow: 0 4px 16px rgba(30,58,138,0.12); }
+body.theme-light [class^="bg-slate-9"],body.theme-light [class*=" bg-slate-9"] { background-color:#f8fafc; }
+body.theme-light [class^="bg-slate-950"],body.theme-light [class*=" bg-slate-950"] { background-color:#f1f5f9; }
+body.theme-light [class^="bg-slate-8"],body.theme-light [class*=" bg-slate-8"] { background-color:#eef2f7; }
+body.theme-light [class^="border-slate-"],body.theme-light [class*=" border-slate-"] { border-color:#e2e8f0; }
+body.theme-light [class^="border-purple-8"],body.theme-light [class*=" border-purple-8"] { border-color:#ddd6fe; }
+body.theme-light [class^="bg-purple-950"],body.theme-light [class*=" bg-purple-950"] { background-color:#f5f3ff; }
+body.theme-light [class^="from-blue-950"],body.theme-light [class*=" from-blue-950"] { background-image:linear-gradient(90deg,#eff6ff,#f5f3ff); }
+body.theme-light [class^="from-purple-900"],body.theme-light [class*=" from-purple-900"] { background-image:linear-gradient(90deg,#ede9fe,#ffffff,#dbeafe); }
+body.theme-light [class^="text-slate-100"],body.theme-light [class*=" text-slate-100"] { color:#1e293b; }
+body.theme-light [class^="text-slate-200"],body.theme-light [class*=" text-slate-200"] { color:#1e293b; }
+body.theme-light [class^="text-slate-300"],body.theme-light [class*=" text-slate-300"] { color:#475569; }
+body.theme-light [class^="text-slate-400"],body.theme-light [class*=" text-slate-400"] { color:#64748b; }
+body.theme-light [class^="text-blue-300"],body.theme-light [class*=" text-blue-300"] { color:#1d4ed8; }
+body.theme-light [class^="text-blue-400"],body.theme-light [class*=" text-blue-400"] { color:#2563eb; }
+body.theme-light [class^="text-amber-400"],body.theme-light [class*=" text-amber-400"] { color:#b45309; }
+body.theme-light [class^="text-amber-300"],body.theme-light [class*=" text-amber-300"] { color:#b45309; }
+body.theme-light [class^="text-amber-200"],body.theme-light [class*=" text-amber-200"] { color:#92400e; }
+body.theme-light [class^="text-emerald-400"],body.theme-light [class*=" text-emerald-400"] { color:#047857; }
+body.theme-light [class^="text-purple-400"],body.theme-light [class*=" text-purple-400"] { color:#7c3aed; }
+body.theme-light [class^="text-purple-300"],body.theme-light [class*=" text-purple-300"] { color:#6d28d9; }
+body.theme-light [class^="text-purple-200"],body.theme-light [class*=" text-purple-200"] { color:#5b21b6; }
+body.theme-light [class^="text-purple-100"],body.theme-light [class*=" text-purple-100"] { color:#4c1d95; }
+body.theme-light [class^="text-rose-400"],body.theme-light [class*=" text-rose-400"] { color:#e11d48; }
+body.theme-light [class^="text-white"],body.theme-light [class*=" text-white"] { color:#0f172a; }
+body.theme-light button.text-white, body.theme-light [class*="bg-gradient-to-"].text-white, body.theme-light button[class*="bg-blue-6"], body.theme-light button[class*="bg-emerald-6"] { color: #ffffff; }
+body.theme-light :is(input, textarea, select) { background-color: #ffffff !important; color: #0f172a !important; border-color: #cbd5e1 !important; }
+body.theme-light :is(input, textarea)::placeholder { color: #94a3b8; }
+body.theme-light code { background: #fff7ed; padding: 0 4px; border-radius: 4px; }
+    </style>
+</head>
+<body class="theme-light math-bg min-h-screen flex flex-col justify-between relative selection:bg-yellow-500 selection:text-black">
+
+    <!-- Math Ambient Overlay -->
+    <div class="math-symbols-overlay"></div>
+
+    <button type="button" id="theme-toggle" class="theme-toggle" onclick="toggleTheme()"><i class="fa-solid fa-moon"></i> Tema Gelap</button>
+
+    <!-- MANDATORY WATERMARK -->
+    <div class="author-watermark flex items-center gap-2">
+        <i class="fa-solid fa-graduation-cap text-yellow-400"></i>
+        <span>Dibuat Oleh Yudan Sudarman</span>
+    </div>
+
+    <!-- MAIN APP CONTAINER -->
+    <div id="app" class="relative z-10 flex-grow flex flex-col">
+
+        <!-- TOP NAVBAR -->
+        <header id="main-nav" class="hidden glass-card sticky top-0 z-40 border-b border-slate-800 px-4 py-3">
+            <div class="max-w-6xl mx-auto flex flex-wrap justify-between items-center gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-700 via-blue-600 to-amber-500 flex items-center justify-center font-bold text-white text-lg shadow-lg">
+                        \(\lim\)
+                    </div>
+                    <div>
+                        <h1 class="font-extrabold text-slate-100 text-sm md:text-base leading-tight">LMS Interactive Aplikasi Limit</h1>
+                        <p class="text-xs text-amber-400 font-semibold" id="nav-school-info">SMAN 2 Tasikmalaya</p>
+                    </div>
+                </div>
+
+                <!-- Student Info Pill -->
+                <div class="flex items-center gap-4 bg-slate-900/90 px-4 py-1.5 rounded-full border border-slate-700/80">
+                    <div class="text-right text-xs">
+                        <span id="nav-student-name" class="font-bold text-blue-300 block">Siswa</span>
+                        <span id="nav-student-class" class="text-slate-400">Kelas XI</span>
+                    </div>
+                    <div class="w-8 h-8 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center font-semibold text-xs">
+                        <i class="fa-solid fa-user-graduate"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Tracker -->
+            <div class="max-w-6xl mx-auto mt-3">
+                <div class="flex justify-between text-[10px] sm:text-xs text-slate-400 mb-1 font-medium">
+                    <span id="step-label">Sintaks Pembelajaran LMS</span>
+                    <span id="progress-percent">0% Selesai</span>
+                </div>
+                <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700/50">
+                    <div id="progress-bar" class="h-full bg-gradient-to-r from-purple-600 via-blue-500 to-amber-400 rounded-full transition-all duration-500 w-[0%]"></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- SINTAKS STEPS BOTTOM NAVIGATION BAR (INTERACTIVE NAVIGATION) -->
+        <nav id="syntax-stepper-bar" class="hidden glass-card sticky top-[80px] z-30 border-b border-amber-500/20 bg-slate-950/90 py-2 px-4 shadow-lg">
+            <div class="max-w-6xl mx-auto flex items-center justify-between gap-1 overflow-x-auto no-scrollbar text-xs">
+                <button onclick="navigatePage('page-step1')" id="btn-step1" class="step-nav-btn flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-700/60 bg-slate-900 text-slate-300 hover:text-amber-400 whitespace-nowrap transition">
+                    <span class="w-5 h-5 rounded-full bg-slate-800 text-amber-400 font-bold text-[10px] flex items-center justify-center">1</span>
+                    <span class="font-bold text-[11px]">Orientasi</span>
+                </button>
+                <i class="fa-solid fa-chevron-right text-[10px] text-slate-600"></i>
+
+                <button onclick="navigatePage('page-step2')" id="btn-step2" class="step-nav-btn flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-700/60 bg-slate-900 text-slate-300 hover:text-amber-400 whitespace-nowrap transition">
+                    <span class="w-5 h-5 rounded-full bg-slate-800 text-amber-400 font-bold text-[10px] flex items-center justify-center">2</span>
+                    <span class="font-bold text-[11px]">Presentasi PPT</span>
+                </button>
+                <i class="fa-solid fa-chevron-right text-[10px] text-slate-600"></i>
+
+                <button onclick="navigatePage('page-kelompok')" id="btn-kelompok" class="step-nav-btn flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-700/60 bg-slate-900 text-slate-300 hover:text-amber-400 whitespace-nowrap transition">
+                    <span class="w-5 h-5 rounded-full bg-slate-800 text-amber-400 font-bold text-[10px] flex items-center justify-center"><i class="fa-solid fa-users"></i></span>
+                    <span class="font-bold text-[11px]">Data Kelompok</span>
+                </button>
+                <i class="fa-solid fa-chevron-right text-[10px] text-slate-600"></i>
+
+                <button onclick="navigatePage('page-step3')" id="btn-step3" class="step-nav-btn flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-700/60 bg-slate-900 text-slate-300 hover:text-amber-400 whitespace-nowrap transition">
+                    <span class="w-5 h-5 rounded-full bg-slate-800 text-amber-400 font-bold text-[10px] flex items-center justify-center">3</span>
+                    <span class="font-bold text-[11px]">Penyelidikan 1</span>
+                </button>
+                <i class="fa-solid fa-chevron-right text-[10px] text-slate-600"></i>
+
+                <button onclick="navigatePage('page-step4')" id="btn-step4" class="step-nav-btn flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-700/60 bg-slate-900 text-slate-300 hover:text-amber-400 whitespace-nowrap transition">
+                    <span class="w-5 h-5 rounded-full bg-slate-800 text-amber-400 font-bold text-[10px] flex items-center justify-center">4</span>
+                    <span class="font-bold text-[11px]">Penyelidikan 2</span>
+                </button>
+                <i class="fa-solid fa-chevron-right text-[10px] text-slate-600"></i>
+
+                <button onclick="navigatePage('page-step5')" id="btn-step5" class="step-nav-btn flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-700/60 bg-slate-900 text-slate-300 hover:text-amber-400 whitespace-nowrap transition">
+                    <span class="w-5 h-5 rounded-full bg-slate-800 text-amber-400 font-bold text-[10px] flex items-center justify-center">5</span>
+                    <span class="font-bold text-[11px]">Refleksi</span>
+                </button>
+                <i class="fa-solid fa-chevron-right text-[10px] text-slate-600"></i>
+
+                <button onclick="navigatePage('page-step6')" id="btn-step6" class="step-nav-btn flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-700/60 bg-slate-900 text-slate-300 hover:text-amber-400 whitespace-nowrap transition">
+                    <span class="w-5 h-5 rounded-full bg-slate-800 text-amber-400 font-bold text-[10px] flex items-center justify-center"><i class="fa-solid fa-flag"></i></span>
+                    <span class="font-bold text-[11px]">Hasil Akhir</span>
+                </button>
+                <i class="fa-solid fa-chevron-right text-[10px] text-slate-600"></i>
+                <button onclick="navigatePage('page-custom')" id="btn-step7" class="step-nav-btn flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-700/60 bg-slate-900 text-slate-300 hover:text-amber-400 whitespace-nowrap transition">
+                    <span class="w-5 h-5 rounded-full bg-slate-800 text-amber-400 font-bold text-[10px] flex items-center justify-center"><i class="fa-solid fa-sliders"></i></span>
+                    <span class="font-bold text-[11px]">Latihan Bebas</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="max-w-5xl mx-auto w-full p-4 sm:p-6 flex-grow flex flex-col justify-center mb-12">
+
+            <!-- PAGE 0: LOGIN & IDENTITAS SISWA -->
+            <section id="page-login" class="my-auto py-8">
+                <div class="glass-card max-w-md mx-auto rounded-3xl p-6 sm:p-8 border border-amber-500/30 shadow-2xl relative overflow-hidden">
+                    <!-- Top Subtle Background Glow -->
+                    <div class="absolute -top-10 -right-10 w-32 h-32 bg-amber-500/20 rounded-full blur-2xl pointer-events-none"></div>
+                    <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-blue-600/20 rounded-full blur-2xl pointer-events-none"></div>
+
+                    <!-- Header Section -->
+                    <div class="text-center space-y-3 mb-6 relative z-10">
+                        <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-purple-700 via-blue-600 to-amber-500 flex items-center justify-center font-black text-2xl text-white shadow-xl shadow-amber-500/10">
+                            \(\lim_{x \to a}\)
+                        </div>
+                        <div>
+                            <span class="text-[10px] font-extrabold uppercase tracking-widest text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/30">
+                                SMAN 2 Tasikmalaya
+                            </span>
+                            <h2 class="text-2xl font-black text-white mt-2">LMS Limit Fungsi</h2>
+                            <p class="text-xs text-slate-300 mt-1">Platform Pembelajaran Interaktif Kalkulus & Aplikasi Limit</p>
+                        </div>
+                    </div>
+
+                    <!-- Login Form -->
+                    <form onsubmit="handleLogin(event)" class="space-y-4 relative z-10">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-300 mb-1.5">
+                                <i class="fa-solid fa-user text-amber-400 mr-1"></i> Nama Lengkap Siswa
+                            </label>
+                            <div class="relative">
+                                <i class="fa-solid fa-id-card absolute left-3.5 top-3 text-slate-500 text-xs"></i>
+                                <input type="text" id="input-nama" required placeholder="Contoh: Rendra Putra" 
+                                    class="w-full bg-slate-900/90 border border-slate-700 rounded-xl pl-9 pr-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-300 mb-1.5">
+                                    <i class="fa-solid fa-graduation-cap text-amber-400 mr-1"></i> Kelas
+                                </label>
+                                <div class="relative">
+                                    <i class="fa-solid fa-users-class absolute left-3.5 top-3 text-slate-500 text-xs"></i>
+                                    <input type="text" id="input-kelas" required placeholder="XI-C2" value="XI-C2" 
+                                        class="w-full bg-slate-900/90 border border-slate-700 rounded-xl pl-9 pr-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-300 mb-1.5">
+                                    <i class="fa-solid fa-school text-amber-400 mr-1"></i> Sekolah
+                                </label>
+                                <div class="relative">
+                                    <i class="fa-solid fa-building-columns absolute left-3.5 top-3 text-slate-500 text-xs"></i>
+                                    <input type="text" id="input-sekolah" required placeholder="SMAN 2 Tasikmalaya" value="SMAN 2 Tasikmalaya" 
+                                        class="w-full bg-slate-900/90 border border-slate-700 rounded-xl pl-9 pr-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition">
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full mt-3 bg-gradient-to-r from-purple-700 via-blue-600 to-amber-500 hover:opacity-95 text-white font-extrabold py-3 rounded-xl shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2 text-xs uppercase tracking-wider">
+                            <span>Masuk Pembelajaran LMS</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </form>
+
+                    <div class="mt-6 pt-4 border-t border-slate-800 text-center text-[11px] text-slate-400">
+                        Disusun oleh: <strong class="text-amber-400">Yudan Sudarman</strong> (232151127)
+                    </div>
+                </div>
+            </section>
+
+            <!-- PAGE 1: DIAGNOSTIC TEST -->
+            <section id="page-step1" class="hidden space-y-6 my-auto">
+                <div class="glass-card rounded-2xl p-6 border border-slate-700">
+                    <div class="flex items-center justify-between mb-4 border-b border-slate-700/60 pb-3">
+                        <div>
+                            <span class="text-xs font-bold text-amber-400 uppercase tracking-wider">Tahap 1: Orientasi Awal</span>
+                            <h2 class="text-xl font-bold text-white">Tes Diagnostik Kesiapan Belajar Limit</h2>
+                        </div>
+                        <span class="px-3 py-1 bg-amber-500/20 text-amber-300 text-xs font-semibold rounded-lg border border-amber-500/30">
+                            Assessment for Learning
+                        </span>
+                    </div>
+
+                    <p class="text-xs text-slate-300 mb-6">
+                        Mari uji pemahaman dasarmu sebelum mengeksplorasi materi presentasi interaktif dan investigasi LKPD.
+                    </p>
+
+                    <div class="space-y-6">
+                        <div class="bg-slate-900/80 rounded-xl p-4 border border-slate-800">
+                            <label class="block text-xs font-bold text-blue-300 mb-2">
+                                1. Apakah makna dari notasi \(\lim_{x \to a} f(x) = L\)?
+                            </label>
+                            <div class="space-y-2 text-xs text-slate-300">
+                                <label class="flex items-start gap-3 p-2.5 rounded-lg bg-slate-800/50 hover:bg-slate-800 cursor-pointer">
+                                    <input type="radio" name="diag_q1" value="A" class="mt-0.5">
+                                    <span>Nilai tepat fungsi ketika \(x\) sama persis dengan \(a\).</span>
+                                </label>
+                                <label class="flex items-start gap-3 p-2.5 rounded-lg bg-slate-800/50 hover:bg-slate-800 cursor-pointer">
+                                    <input type="radio" name="diag_q1" value="B" class="mt-0.5">
+                                    <span>Nilai pendekatan yang dituju fungsi \(f(x)\) ketika \(x\) bergerak mendekati titik \(a\).</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-900/80 rounded-xl p-4 border border-slate-800">
+                            <label class="block text-xs font-bold text-blue-300 mb-2">
+                                2. Mengapa substitusi langsung yang menghasilkan bentuk tak tentu \(\left(\frac{0}{0}\right)\) perlu diselesaikan dengan teknik khusus?
+                            </label>
+                            <div class="space-y-2 text-xs text-slate-300">
+                                <label class="flex items-start gap-3 p-2.5 rounded-lg bg-slate-800/50 hover:bg-slate-800 cursor-pointer">
+                                    <input type="radio" name="diag_q2" value="A" class="mt-0.5">
+                                    <span>Karena \(\frac{0}{0}\) belum terdefinisi, sehingga butuh pemfaktoran/manipulasi aljabar untuk menemukan nilai limit sebenarnya.</span>
+                                </label>
+                                <label class="flex items-start gap-3 p-2.5 rounded-lg bg-slate-800/50 hover:bg-slate-800 cursor-pointer">
+                                    <input type="radio" name="diag_q2" value="B" class="mt-0.5">
+                                    <span>Karena bentuk \(\frac{0}{0}\) berarti jawaban otomatis nol.</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 flex justify-end">
+                        <button onclick="submitStep1()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-2.5 rounded-xl text-xs transition flex items-center gap-2">
+                            <span>Presentasi PPT</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PAGE 2: INTERACTIVE PPT SLIDES PRESENTATION -->
+            <section id="page-step2" class="hidden space-y-6">
+                <div class="ppt-card rounded-2xl p-6 border border-amber-500/40 relative shadow-2xl">
+                    <div class="flex items-center justify-between mb-4 border-b border-slate-700/80 pb-3">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-file-powerpoint text-amber-400 text-xl"></i>
+                            <h2 class="text-base font-extrabold text-white">Presentasi Interaktif: Aplikasi Limit Fungsi</h2>
+                        </div>
+                        <span id="slide-indicator" class="px-3 py-1 bg-amber-500/20 text-amber-300 text-xs font-bold rounded-lg border border-amber-500/30">
+                            Slide 1 dari 5
+                        </span>
+                    </div>
+
+                    <!-- SLIDE 1: COVER & TARGET ACHIEVEMENT -->
+                    <div id="ppt-slide-1" class="ppt-slide-content space-y-4">
+                        <div class="bg-gradient-to-r from-purple-900/60 via-slate-900 to-blue-900/60 p-6 rounded-xl border border-amber-500/30 text-center space-y-3">
+                            <span class="text-xs font-bold text-amber-400 uppercase tracking-widest">Matematika Tingkat Lanjut - Fase F (Kelas XI)</span>
+                            <h3 class="text-2xl font-black text-white">Aplikasi Limit Fungsi Aljabar dan Trigonometri</h3>
+                            <p class="text-xs text-slate-300">SMA Negeri 2 Tasikmalaya</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-slate-900/90 p-5 rounded-xl border border-slate-800 flex flex-col justify-center items-center text-center">
+                                <div class="w-20 h-20 rounded-full border-4 border-amber-400 flex items-center justify-center font-black text-2xl text-amber-400 mb-2 shadow-lg shadow-amber-500/20">
+                                    80%
+                                </div>
+                                <span class="text-xs font-bold text-slate-200 uppercase">Target Achievement</span>
+                                <p class="text-[11px] text-slate-400 mt-1">Ketepatan minimal pencapaian aplikasi limit pada investigasi kontekstual.</p>
+                            </div>
+
+                            <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 space-y-2 text-xs">
+                                <h4 class="font-bold text-amber-400 uppercase">3 Misi Utama Aplikasi Limit:</h4>
+                                <div class="space-y-1.5 text-slate-300">
+                                    <div class="flex items-center gap-2 bg-slate-800/60 p-2 rounded-lg">
+                                        <i class="fa-solid fa-atom text-amber-400"></i>
+                                        <span><strong>Konteks Fisika:</strong> Menghitung Kecepatan Sesaat.</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 bg-slate-800/60 p-2 rounded-lg">
+                                        <i class="fa-solid fa-dna text-emerald-400"></i>
+                                        <span><strong>Konteks Biologi:</strong> Kapasitas Maksimum Populasi.</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 bg-slate-800/60 p-2 rounded-lg">
+                                        <i class="fa-solid fa-chart-line text-blue-400"></i>
+                                        <span><strong>Konteks Ekonomi:</strong> Laju Keuntungan Perusahaan.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SLIDE 2: TEORI ABSTRAK VS REALITAS FISIK -->
+                    <div id="ppt-slide-2" class="ppt-slide-content hidden space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Left Teori Abstrak -->
+                            <div class="bg-slate-950/80 p-4 rounded-xl border border-purple-500/40 space-y-3">
+                                <h4 class="text-xs font-bold text-purple-400 uppercase tracking-wider border-b border-purple-500/30 pb-2">
+                                    <i class="fa-solid fa-square-root-variable"></i> Teori Abstrak: Pendekatan Nilai
+                                </h4>
+                                <p class="text-xs text-slate-300 leading-relaxed">
+                                    Siswa mengingat kembali grafik trigonometri dasar saat mendekati nol:
+                                </p>
+                                <div class="bg-slate-900 p-3 rounded-lg text-center font-mono text-xs text-blue-300">
+                                    $$\lim_{x \to 0} \frac{\sin x}{x} = 1 \quad \text{dan} \quad \lim_{x \to 0} \cos x = 1$$
+                                </div>
+                                <p class="text-[11px] text-slate-400">
+                                    Limit trigonometri menjadi dasar konsep derivatif/turunan fungsi trigonometri.
+                                </p>
+                            </div>
+
+                            <!-- Right Realitas Fisik -->
+                            <div class="bg-slate-950/80 p-4 rounded-xl border border-amber-500/40 space-y-3">
+                                <h4 class="text-xs font-bold text-amber-400 uppercase tracking-wider border-b border-amber-500/30 pb-2">
+                                    <i class="fa-solid fa-wave-square"></i> Realitas Fisik Kehidupan
+                                </h4>
+                                <div class="grid grid-cols-3 gap-2 text-center text-[10px]">
+                                    <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                                        <i class="fa-solid fa-water text-blue-400 text-base block mb-1"></i>
+                                        <span class="text-slate-300 font-semibold">Gelombang</span>
+                                    </div>
+                                    <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                                        <i class="fa-solid fa-arrows-left-right text-amber-400 text-base block mb-1"></i>
+                                        <span class="text-slate-300 font-semibold">Getaran Bandul</span>
+                                    </div>
+                                    <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                                        <i class="fa-solid fa-gauge-high text-emerald-400 text-base block mb-1"></i>
+                                        <span class="text-slate-300 font-semibold">Spedometer</span>
+                                    </div>
+                                </div>
+                                <div class="bg-amber-500/10 p-3 rounded-lg border border-amber-500/30 text-[11px] text-amber-200 italic font-semibold text-center">
+                                    "Limit adalah DNA semesta — kunci utama untuk memahami turunan, integral, gelombang, dan getaran."
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SLIDE 3: PROBLEM STATEMENT (RENDRA & HASBI) -->
+                    <div id="ppt-slide-3" class="ppt-slide-content hidden space-y-4">
+                        <h4 class="text-xs font-bold text-amber-400 uppercase tracking-wider">Pemicu Masalah Kontekstual</h4>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-slate-900/90 p-4 rounded-xl border border-blue-500/30 space-y-2">
+                                <div class="flex items-center gap-2 text-blue-400 font-bold text-xs">
+                                    <i class="fa-solid fa-gamepad"></i> Kasus Rendra: Kuota FF Critical 10GB
+                                </div>
+                                <div class="text-xs text-slate-300 font-mono bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                                    $$v(x) = \frac{x^3 - 1000}{x - 10}$$
+                                </div>
+                                <p class="text-[11px] text-slate-400">Berapakah nilai kecepatan unduhan saat penggunaan kuota \(x\) mendekati 10 GB?</p>
+                            </div>
+
+                            <div class="bg-slate-900/90 p-4 rounded-xl border border-emerald-500/30 space-y-2">
+                                <div class="flex items-center gap-2 text-emerald-400 font-bold text-xs">
+                                    <i class="fa-solid fa-building"></i> Kasus Hasbi: Profit Properti Tasikmalaya
+                                </div>
+                                <div class="text-xs text-slate-300 font-mono bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                                    $$f(x) = \frac{x^2 - 16}{x - 4}$$
+                                </div>
+                                <p class="text-[11px] text-slate-400">Berapakah perkiraan profit saat unit penjualan \(x\) mendekati 4?</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SLIDE 4: SCAFFOLDING & ALUR PENYELESAIAN -->
+                    <div id="ppt-slide-4" class="ppt-slide-content hidden space-y-4">
+                        <h4 class="text-xs font-bold text-amber-400 uppercase tracking-wider">Sintaks Scaffolding: Penanganan Bentuk Tak Tentu</h4>
+                        <div class="bg-slate-950 p-5 rounded-xl border border-slate-800 text-center space-y-4">
+                            <div class="flex flex-wrap justify-center items-center gap-3 text-xs font-bold">
+                                <div class="bg-blue-600/30 text-blue-300 border border-blue-500 px-3 py-2 rounded-xl">Substitusi Langsung</div>
+                                <i class="fa-solid fa-arrow-right text-slate-500"></i>
+                                <div class="bg-purple-600/30 text-purple-300 border border-purple-500 px-3 py-2 rounded-xl">Hasil \(\frac{0}{0}\) (Tak Tentu)</div>
+                                <i class="fa-solid fa-arrow-right text-slate-500"></i>
+                                <div class="bg-amber-600/30 text-amber-300 border border-amber-500 px-3 py-2 rounded-xl">Pemfaktoran / Manipulasi Aljabar</div>
+                            </div>
+                            <p class="text-xs text-slate-300">
+                                Pembelajaran dilakukan dengan bantuan bertahap (scaffolding) khusus pada fase kritis saat menentukan faktor pembuat nol.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- SLIDE 5: PEMBAGIAN KELOMPOK SISWA SMAN 2 TASIKMALAYA -->
+                    <div id="ppt-slide-5" class="ppt-slide-content hidden space-y-3">
+                        <div class="flex justify-between items-center border-b border-slate-700/60 pb-2">
+                            <h4 class="text-xs font-bold text-amber-400 uppercase tracking-wider">
+                                <i class="fa-solid fa-users"></i> Pembagian Kelompok Diskusi (PPT Modul)
+                            </h4>
+                            <span class="text-[10px] text-slate-400">6 Kelompok Belajar</span>
+                        </div>
+
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[10px]">
+                            <div class="bg-slate-900/90 p-2.5 rounded-lg border border-amber-500/30">
+                                <strong class="text-amber-400 block mb-1">Kelompok 1</strong>
+                                <ul class="text-slate-300 space-y-0.5">
+                                    <li>• Fathan Syamikh</li>
+                                    <li>• Carrisa Putri</li>
+                                    <li>• Renata Kayla</li>
+                                    <li>• Arrafi Revian</li>
+                                    <li>• M. Hasbi Assidiqi</li>
+                                    <li>• Salwa Nur Hamidah</li>
+                                </ul>
+                            </div>
+                            <div class="bg-slate-900/90 p-2.5 rounded-lg border border-amber-500/30">
+                                <strong class="text-amber-400 block mb-1">Kelompok 2</strong>
+                                <ul class="text-slate-300 space-y-0.5">
+                                    <li>• Jenny Nurrahmania</li>
+                                    <li>• Chayara Putri</li>
+                                    <li>• Siti Isma Rohmani</li>
+                                    <li>• Fachri Khairul</li>
+                                    <li>• M. Radhitia Putra</li>
+                                    <li>• Sahira Mayza</li>
+                                </ul>
+                            </div>
+                            <div class="bg-slate-900/90 p-2.5 rounded-lg border border-amber-500/30">
+                                <strong class="text-amber-400 block mb-1">Kelompok 3</strong>
+                                <ul class="text-slate-300 space-y-0.5">
+                                    <li>• Khaerunnisa Zahirah</li>
+                                    <li>• Zulaika Najmutsaaqib</li>
+                                    <li>• Fatimah Ahmad</li>
+                                    <li>• Zuleikha Hafitrie</li>
+                                    <li>• Gammar Rhainur</li>
+                                    <li>• Rendra Putra Arifin</li>
+                                </ul>
+                            </div>
+                            <div class="bg-slate-900/90 p-2.5 rounded-lg border border-amber-500/30">
+                                <strong class="text-amber-400 block mb-1">Kelompok 4</strong>
+                                <ul class="text-slate-300 space-y-0.5">
+                                    <li>• Naila Shada Hazimah</li>
+                                    <li>• Arni Rahman</li>
+                                    <li>• Julian Nur Habibah</li>
+                                    <li>• M. Aufa Kurnia</li>
+                                    <li>• Saprudin</li>
+                                    <li>• Muhamad Raevan</li>
+                                </ul>
+                            </div>
+                            <div class="bg-slate-900/90 p-2.5 rounded-lg border border-amber-500/30">
+                                <strong class="text-amber-400 block mb-1">Kelompok 5</strong>
+                                <ul class="text-slate-300 space-y-0.5">
+                                    <li>• Salma Wafa</li>
+                                    <li>• Astrella Nafeesa</li>
+                                    <li>• Khaulah Arrasyidah</li>
+                                    <li>• M. Ganezia Rinaldi</li>
+                                    <li>• Zaidan Ibnu Athoillah</li>
+                                    <li>• Paramitha Nur</li>
+                                </ul>
+                            </div>
+                            <div class="bg-slate-900/90 p-2.5 rounded-lg border border-amber-500/30">
+                                <strong class="text-amber-400 block mb-1">Kelompok 6</strong>
+                                <ul class="text-slate-300 space-y-0.5">
+                                    <li>• Rais Ardianto</li>
+                                    <li>• Nazwa Ramadhani</li>
+                                    <li>• M. Haikal Sudiana</li>
+                                    <li>• Amira Zarin</li>
+                                    <li>• Aura Sakyatun</li>
+                                    <li>• Darrel Putra</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Slide Controller Navigation -->
+                    <div class="mt-6 flex justify-between items-center border-t border-slate-700/80 pt-4">
+                        <button onclick="changeSlide(-1)" id="btn-prev-slide" disabled class="px-4 py-2 bg-slate-800 text-slate-500 rounded-xl text-xs font-bold transition disabled:opacity-50">
+                            <i class="fa-solid fa-arrow-left mr-1"></i> Slide Sebelumnya
+                        </button>
+                        
+                        <button onclick="changeSlide(1)" id="btn-next-slide" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-extrabold transition">
+                            Slide Berikutnya <i class="fa-solid fa-arrow-right ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center pt-2">
+                    <button onclick="navigatePage('page-step1')" class="text-xs text-slate-400 hover:text-white flex items-center gap-1">
+                        <i class="fa-solid fa-arrow-left"></i> Orientasi
+                    </button>
+                    <button onclick="navigatePage('page-kelompok')" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-2.5 rounded-xl text-xs transition flex items-center gap-2">
+                        <span>Data Kelompok</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- PAGE 2B: DATA KELOMPOK -->
+            <section id="page-kelompok" class="hidden space-y-6">
+                <div class="glass-card rounded-2xl p-6 border border-slate-700 space-y-5">
+                    <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                        <div>
+                            <span class="text-xs font-bold text-amber-400 uppercase tracking-wider">Tahap 2: Pembagian Kelompok</span>
+                            <h2 class="text-xl font-bold text-white">Data Kelompok Pengerjaan LKPD</h2>
+                        </div>
+                        <i class="fa-solid fa-users text-amber-400 text-2xl"></i>
+                    </div>
+                    <p class="text-xs text-slate-300">Setelah pembagian kelompok pada slide presentasi, pilih kelompokmu. Nama anggota terisi otomatis dan masih bisa kamu ubah. Jika susunan kelompokmu berbeda, pilih "Isi manual". Data ini akan tercantum di rekapan akhir.</p>
+                    <div id="kel-info" class="hidden text-xs bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-xl p-3"></div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div><label class="block text-xs font-bold text-slate-300 mb-1">Pilih kelompok</label>
+                            <select id="kel-pilih" onchange="kelPilih()" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500">
+                                <option value="">-- Pilih kelompok --</option>
+                                <option value="1">Kelompok 1</option><option value="2">Kelompok 2</option><option value="3">Kelompok 3</option>
+                                <option value="4">Kelompok 4</option><option value="5">Kelompok 5</option><option value="6">Kelompok 6</option>
+                                <option value="manual">Isi manual</option>
+                            </select></div>
+                        <div><label class="block text-xs font-bold text-slate-300 mb-1">Nama kelompok</label>
+                            <input type="text" id="kel-nama" placeholder="Contoh: Kelompok 3" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"></div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div><label class="block text-[11px] font-bold text-slate-300 mb-1">Anggota 1</label><input type="text" id="kel-m1" placeholder="Nama anggota 1" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"></div>
+                        <div><label class="block text-[11px] font-bold text-slate-300 mb-1">Anggota 2</label><input type="text" id="kel-m2" placeholder="Nama anggota 2" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"></div>
+                        <div><label class="block text-[11px] font-bold text-slate-300 mb-1">Anggota 3</label><input type="text" id="kel-m3" placeholder="Nama anggota 3" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"></div>
+                        <div><label class="block text-[11px] font-bold text-slate-300 mb-1">Anggota 4</label><input type="text" id="kel-m4" placeholder="Nama anggota 4" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"></div>
+                        <div><label class="block text-[11px] font-bold text-slate-300 mb-1">Anggota 5</label><input type="text" id="kel-m5" placeholder="Nama anggota 5" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"></div>
+                        <div><label class="block text-[11px] font-bold text-slate-300 mb-1">Anggota 6</label><input type="text" id="kel-m6" placeholder="Nama anggota 6" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"></div>
+                        </div>
+                    <p id="kel-msg" class="text-xs text-rose-400"></p>
+                    <div class="mt-6 flex justify-between items-center">
+                        <button onclick="navigatePage('page-step2')" class="text-xs text-slate-400 hover:text-white flex items-center gap-1">
+                            <i class="fa-solid fa-arrow-left"></i> Presentasi PPT
+                        </button>
+                        <button onclick="kelSubmit()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-2.5 rounded-xl text-xs transition flex items-center gap-2">
+                            <span>LKPD 1</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PAGE 3: LKPD 1 (RENDRA GAME FREE FIRE) -->
+            <section id="page-step3" class="hidden space-y-6">
+                <div class="glass-card rounded-2xl p-6 border border-slate-700 space-y-5">
+                    <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                        <div>
+                            <span class="text-xs font-bold text-amber-400 uppercase tracking-wider">Tahap 3: LKPD Investigasi 1</span>
+                            <h2 class="text-xl font-bold text-white">Kasus Rendra: Kuota Critical Game Free Fire (10 GB)</h2>
+                        </div>
+                        <i class="fa-solid fa-gamepad text-amber-400 text-2xl"></i>
+                    </div>
+
+                    <div class="bg-gradient-to-r from-blue-950/80 to-purple-950/80 p-4 rounded-xl border border-blue-500/40 text-xs space-y-2">
+                        <p class="text-slate-200">
+                            <strong>Deskripsi LKPD Modul:</strong> Rendra kehabisan kuota saat bermain game Free Fire. Kemudian Rendra membeli paket data internet dengan kuota 10 GB. Kecepatan unduhan rata-rata (dalam Mbps) saat penggunaan \(x\) GB dimodelkan dengan fungsi:
+                        </p>
+                        <div class="text-center py-2 text-base font-bold text-amber-400">
+                            $$v(x) = \frac{x^3 - 1000}{x - 10}$$
+                        </div>
+                    </div>
+
+                    <!-- Simulator & Interactive Plotter -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 space-y-3">
+                            <h3 class="text-xs font-bold text-amber-400 uppercase">Kalkulator Tabel Pendekatan Nilai \(x \to 10\)</h3>
+                            <div class="flex gap-2">
+                                <input type="number" step="0.001" id="sim-x-val" value="9.999" 
+                                    class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white w-full focus:outline-none focus:border-amber-500">
+                                <button onclick="calculateSimLimit()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-3 py-1.5 rounded-lg text-xs">
+                                    Hitung \(v(x)\)
+                                </button>
+                            </div>
+                            <div id="sim-result" class="p-2.5 bg-slate-950 rounded-lg text-xs font-mono text-emerald-400 border border-slate-800">
+                                v(9.999) = 299.97 Mbps (Mendekati 300 Mbps)
+                            </div>
+                        </div>
+
+                        <div id="exp1" class="md:col-span-2 md:order-last"></div>
+                    </div>
+
+                    <!-- Questions -->
+                    <div class="space-y-4">
+                        <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-2">
+                            <label class="block text-xs font-bold text-blue-300">
+                                a) Hitunglah nilai limit kecepatan unduhan \(\lim_{x \to 10} \frac{x^3 - 1000}{x - 10}\) secara matematis!
+                            </label>
+                            
+                            <!-- Scaffolding Toggle Button -->
+                            <button type="button" onclick="toggleScaffold('scaffold-lkpd1')" class="text-[11px] text-amber-400 hover:underline flex items-center gap-1 font-semibold">
+                                <i class="fa-solid fa-lightbulb"></i> Butuh Petunjuk Scaffolding Pemfaktoran?
+                            </button>
+                            <div id="scaffold-lkpd1" class="hidden p-3 bg-purple-950/50 rounded-lg border border-purple-800/50 text-[11px] text-purple-200">
+                                Petunjuk: Gunakan identitas faktorisasi kubik \(a^3 - b^3 = (a - b)(a^2 + ab + b^2)\). Maka \(x^3 - 1000 = (x - 10)(x^2 + 10x + 100)\).
+                            </div>
+
+                            <input type="number" id="lkpd1_ans_a" placeholder="Masukkan hasil akhir (Mbps)..." 
+                                class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500">
+                        </div>
+
+                        <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-2">
+                            <label class="block text-xs font-bold text-blue-300">
+                                b) Apakah masalah ini berhubungan dengan konteks ekonomi/teknologi? Jelaskan analisismu!
+                            </label>
+                            <textarea id="lkpd1_ans_b" rows="2" placeholder="Tuliskan analisis penjelasan kelompokmu..." 
+                                class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-amber-500"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 flex justify-between items-center">
+                        <button onclick="navigatePage('page-kelompok')" class="text-xs text-slate-400 hover:text-white flex items-center gap-1">
+                            <i class="fa-solid fa-arrow-left"></i> Data Kelompok
+                        </button>
+                        <button onclick="submitStep3()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-2.5 rounded-xl text-xs transition flex items-center gap-2">
+                            <span>LKPD 2</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PAGE 4: LKPD 2 (HASBI PROPERTI) -->
+            <section id="page-step4" class="hidden space-y-6">
+                <div class="glass-card rounded-2xl p-6 border border-slate-700 space-y-5">
+                    <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                        <div>
+                            <span class="text-xs font-bold text-amber-400 uppercase tracking-wider">Tahap 4: LKPD Investigasi 2</span>
+                            <h2 class="text-xl font-bold text-white">Kasus CEO Hasbi: Proyeksi Keuntungan Properti Tasikmalaya</h2>
+                        </div>
+                        <i class="fa-solid fa-building-user text-amber-400 text-2xl"></i>
+                    </div>
+
+                    <div class="bg-gradient-to-r from-blue-950/80 to-purple-950/80 p-4 rounded-xl border border-blue-500/40 text-xs space-y-2">
+                        <p class="text-slate-200">
+                            <strong>Deskripsi LKPD Modul:</strong> Hasbi adalah seorang CEO Perusahaan Properti di Tasikmalaya. Keuntungan perusahaan (dalam miliar rupiah) dimodelkan dengan fungsi:
+                        </p>
+                        <div class="text-center py-2 text-base font-bold text-amber-400">
+                            $$f(x) = \frac{x^2 - 16}{x - 4}$$
+                        </div>
+                    </div>
+
+                    <div id="exp2"></div>
+
+                    <div class="space-y-4">
+                        <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-2">
+                            <label class="block text-xs font-bold text-blue-300">
+                                a) Tentukan keuntungan Hasbi saat nilai unit penjualan \(x\) mendekati 4 menggunakan metode pemfaktoran \(\lim_{x \to 4} f(x)\)!
+                            </label>
+                            
+                            <button type="button" onclick="toggleScaffold('scaffold-lkpd2')" class="text-[11px] text-amber-400 hover:underline flex items-center gap-1 font-semibold">
+                                <i class="fa-solid fa-lightbulb"></i> Butuh Petunjuk Pemfaktoran Kuadrat?
+                            </button>
+                            <div id="scaffold-lkpd2" class="hidden p-3 bg-purple-950/50 rounded-lg border border-purple-800/50 text-[11px] text-purple-200">
+                                Petunjuk: Faktorkan pembilang \(x^2 - 16 = (x - 4)(x + 4)\), lalu sederhanakan dengan pembagi \((x - 4)\).
+                            </div>
+
+                            <input type="number" id="lkpd2_ans_a" placeholder="Masukkan nilai keuntungan..." 
+                                class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500">
+                        </div>
+
+                        <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-2">
+                            <label class="block text-xs font-bold text-blue-300">
+                                b) Mengapa limit ini penting dalam analisis proyeksi profitabilitas ekonomi?
+                            </label>
+                            <textarea id="lkpd2_ans_b" rows="2" placeholder="Tuliskan analisis kelompokmu..." 
+                                class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-amber-500"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 flex justify-between items-center">
+                        <button onclick="navigatePage('page-step3')" class="text-xs text-slate-400 hover:text-white flex items-center gap-1">
+                            <i class="fa-solid fa-arrow-left"></i> LKPD 1
+                        </button>
+                        <button onclick="submitStep4()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-2.5 rounded-xl text-xs transition flex items-center gap-2">
+                            <span>Refleksi</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PAGE 5: POST TEST & REFLECTION -->
+            <section id="page-step5" class="hidden space-y-6">
+                <div class="glass-card rounded-2xl p-6 border border-slate-700 space-y-5">
+                    <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                        <div>
+                            <span class="text-xs font-bold text-amber-400 uppercase tracking-wider">Tahap 5: Post-Test & Refleksi Deep Learning</span>
+                            <h2 class="text-xl font-bold text-white">Evaluasi Mandiri & Refleksi Konsep Limit</h2>
+                        </div>
+                        <i class="fa-solid fa-square-poll-vertical text-amber-400 text-2xl"></i>
+                    </div>
+
+                    <!-- Biologi Limit Tak Hingga Question -->
+                    <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 space-y-3">
+                        <div class="flex items-center gap-2 text-emerald-400 font-bold text-xs uppercase">
+                            <i class="fa-solid fa-dna"></i> Asesmen Mandiri Biologi (Limit Tak Hingga)
+                        </div>
+                        <p class="text-xs text-slate-300">
+                            Dalam biologi, pertumbuhan populasi spesies dimodelkan dengan fungsi kurva pertumbuhan logistik:
+                        </p>
+                        <div class="text-center py-2 text-lg font-bold text-amber-400 font-mono">
+                            $$P(x) = \frac{1000}{1 + e^{-x}}$$
+                        </div>
+                        <label class="block text-xs font-semibold text-slate-200">
+                            Tentukan kapasitas populasi maksimum ketika waktu bergerak menuju tak hingga (\(x \to \infty\)):
+                        </label>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                            <label class="flex items-center gap-2 p-3 rounded-lg bg-slate-800 hover:bg-slate-700 cursor-pointer">
+                                <input type="radio" name="post_q1" value="500"> <span>500 Individu</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-3 rounded-lg bg-slate-800 hover:bg-slate-700 cursor-pointer">
+                                <input type="radio" name="post_q1" value="1000"> <span>1000 Individu</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-3 rounded-lg bg-slate-800 hover:bg-slate-700 cursor-pointer">
+                                <input type="radio" name="post_q1" value="1500"> <span>1500 Individu</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Reflection Section -->
+                    <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 space-y-2">
+                        <label class="block text-xs font-bold text-amber-400 uppercase flex items-center gap-2">
+                            <i class="fa-solid fa-brain"></i> Refleksi Pribadi Deep Learning
+                        </label>
+                        <p class="text-[11px] text-slate-400">
+                            Tuliskan refleksi singkatmu: "Apa manfaat konsep limit fungsi yang paling terasa dalam memahami fenomena kehidupan nyata?"
+                        </p>
+                        <textarea id="refleksi_text" rows="3" placeholder="Tuliskan refleksi inspiratifmu..." 
+                            class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-amber-500"></textarea>
+                    </div>
+
+                    <div class="mt-6 flex justify-between items-center">
+                        <button onclick="navigatePage('page-step4')" class="text-xs text-slate-400 hover:text-white flex items-center gap-1">
+                            <i class="fa-solid fa-arrow-left"></i> LKPD 2
+                        </button>
+                        <button onclick="finishLMS()" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold px-6 py-2.5 rounded-xl text-xs transition flex items-center gap-2 shadow-lg shadow-emerald-900/40">
+                            <i class="fa-solid fa-flag-checkered"></i>
+                            <span>Hasil Akhir</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PAGE 6: FINAL RECAP & PDF EXPORT -->
+            <section id="page-step6" class="hidden space-y-6">
+                <div class="glass-card rounded-2xl p-6 sm:p-8 border border-slate-700 space-y-6">
+                    <div class="text-center space-y-2 border-b border-slate-700/60 pb-6">
+                        <div class="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center text-3xl mx-auto border border-emerald-500/40">
+                            <i class="fa-solid fa-award"></i>
+                        </div>
+                        <h2 class="text-2xl font-extrabold text-white">Laporan Rekapan Hasil LMS Limit</h2>
+                        <p class="text-xs text-slate-300">Selamat! Seluruh sintaks pembelajaran berbasis modul ujikom telah selesai.</p>
+                    </div>
+
+                    <!-- PDF EXPORT CONTAINER -->
+                    <div id="pdf-report-container" class="bg-slate-950 p-6 rounded-2xl border border-slate-800 space-y-6 text-slate-100">
+                        <div class="flex justify-between items-start border-b border-slate-800 pb-4">
+                            <div>
+                                <h3 class="text-lg font-bold text-amber-400">REKAPAN HASIL BELAJAR LMS LIMIT</h3>
+                                <p class="text-xs text-slate-300">Mata Pelajaran: Matematika Tingkat Lanjut (Fase F)</p>
+                                <p class="text-[11px] text-slate-400" id="report-school">SMAN 2 Tasikmalaya</p>
+                            </div>
+                            <div class="text-right text-xs text-slate-400">
+                                <p id="report-date" class="font-mono">29 Oktober 2026</p>
+                                <span id="report-status" class="inline-block mt-1 px-2.5 py-0.5 bg-emerald-500/20 text-emerald-400 text-[10px] rounded font-bold">Status: Tuntas 80%+</span>
+                            </div>
+                        </div>
+
+                        <!-- Student Identity Grid -->
+                        <div class="grid grid-cols-3 gap-3 bg-slate-900 p-4 rounded-xl border border-slate-800 text-xs">
+                            <div>
+                                <span class="text-slate-400 block text-[10px]">Nama Siswa</span>
+                                <strong id="pdf-student-name" class="text-blue-300 font-semibold">-</strong>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 block text-[10px]">Kelas</span>
+                                <strong id="pdf-student-class" class="text-slate-200 font-semibold">-</strong>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 block text-[10px]">Sekolah</span>
+                                <strong id="pdf-student-school" class="text-slate-200 font-semibold">-</strong>
+                            </div>
+                        </div>
+
+                        <!-- Kelompok -->
+                        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 text-xs">
+                            <span class="text-slate-400 block text-[10px]">Kelompok Pengerjaan LKPD</span>
+                            <strong id="pdf-kelompok-nama" class="text-blue-300 font-semibold">Belum diisi</strong>
+                            <ol id="pdf-kelompok-anggota" class="list-decimal list-inside text-slate-300 text-[11px] mt-1 grid grid-cols-1 sm:grid-cols-2 gap-x-4"></ol>
+                        </div>
+
+                        <!-- Scores -->
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                            <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
+                                <span class="text-[10px] text-slate-400 uppercase font-bold">Diagnostik</span>
+                                <div id="score-diag" class="text-xl font-black text-blue-400 mt-1">100/100</div>
+                            </div>
+                            <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
+                                <span class="text-[10px] text-slate-400 uppercase font-bold">LKPD 1 (Rendra)</span>
+                                <div id="score-lkpd1" class="text-xl font-black text-amber-400 mt-1">100/100</div>
+                            </div>
+                            <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
+                                <span class="text-[10px] text-slate-400 uppercase font-bold">LKPD 2 (Hasbi)</span>
+                                <div id="score-lkpd2" class="text-xl font-black text-amber-400 mt-1">100/100</div>
+                            </div>
+                            <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
+                                <span class="text-[10px] text-slate-400 uppercase font-bold">Post-Test Biologi</span>
+                                <div id="score-post" class="text-xl font-black text-emerald-400 mt-1">100/100</div>
+                            </div>
+                        </div>
+
+                        <!-- Responses -->
+                        <div class="space-y-3 text-xs pt-2">
+                            <h4 class="font-bold text-slate-300 border-b border-slate-800 pb-1">Detail Jawaban Analisis:</h4>
+                            <div class="space-y-2 text-[11px]">
+                                <p><strong>Analisis LKPD 1:</strong> <span id="pdf-ans-lkpd1-b" class="text-slate-300 italic">"..."</span></p>
+                                <p><strong>Analisis LKPD 2:</strong> <span id="pdf-ans-lkpd2-b" class="text-slate-300 italic">"..."</span></p>
+                                <p><strong>Latihan Mandiri Kustom:</strong> <span id="pdf-ans-custom" class="text-slate-300 italic">-</span></p>
+                                <p><strong>Refleksi Siswa:</strong> <span id="pdf-ans-refleksi" class="text-slate-300 italic">"..."</span></p>
+                            </div>
+                        </div>
+
+                        <!-- Signatures -->
+                        <div class="pt-6 border-t border-slate-800 flex justify-between items-end text-[11px] text-slate-400">
+                            <div>
+                                <p>Mengetahui,</p>
+                                <p class="font-semibold text-slate-300 mt-8">Guru Mata Pelajaran</p>
+                                <p class="text-[10px] text-slate-400">Yuvi Nuri Khoeriyah, M.Pd</p>
+                            </div>
+                            <div class="text-right">
+                                <p>Penyusun Modul & LMS,</p>
+                                <p class="font-bold text-amber-400 mt-8">Yudan Sudarman</p>
+                                <p class="text-[10px] text-slate-400">NPM 232151127</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PDF Actions -->
+                    <div class="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+                        <button onclick="downloadPDF()" class="bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black px-6 py-3 rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20">
+                            <i class="fa-solid fa-file-pdf text-base"></i>
+                            <span>Unduh PDF</span>
+                        </button>
+                        <button onclick="navigatePage('page-custom')" class="bg-slate-800 hover:bg-slate-700 text-amber-300 font-semibold px-6 py-3 rounded-xl text-xs transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-sliders"></i>
+                            <span>Latihan Bebas</span>
+                        </button>
+                        <button onclick="resetLMS()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold px-6 py-3 rounded-xl text-xs transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-rotate-right"></i>
+                            <span>Mulai Ulang</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PAGE 7: LATIHAN MANDIRI KUSTOM -->
+            <section id="page-custom" class="hidden space-y-6">
+                <div class="glass-card rounded-2xl p-6 border border-slate-700 space-y-5">
+                    <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                        <div>
+                            <span class="text-xs font-bold text-amber-400 uppercase tracking-wider">Fitur Tambahan</span>
+                            <h2 class="text-xl font-bold text-white">Latihan Mandiri Kustom</h2>
+                        </div>
+                        <i class="fa-solid fa-sliders text-amber-400 text-2xl"></i>
+                    </div>
+                    <div class="flex gap-2 text-xs">
+                        <button type="button" onclick="cuTab('gen')" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 font-bold">Generator Soal</button>
+                        <button type="button" onclick="cuTab('free')" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 font-bold">Fungsi Bebas</button>
+                    </div>
+
+                    <div id="cu-gen" class="space-y-4">
+                        <p class="text-xs text-slate-300">Pilih jenis soal dan atur sendiri angkanya (bilangan bulat), atau tekan Acak. Setiap soal dilengkapi grafik interaktif dan langkah pengerjaan.</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+                            <div class="sm:col-span-2"><label class="block font-bold text-slate-300 mb-1">Jenis soal</label>
+                                <select id="cu-type" onchange="cuTypeChange()" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white">
+                                    <option value="sq">Selisih kuadrat: (x² − p²)/(x − p)</option>
+                                    <option value="tri">Trinomial: (x² − (p+q)x + pq)/(x − p)</option>
+                                    <option value="cub">Selisih kubik: (x³ − p³)/(x − p)</option>
+                                    <option value="akar">Bentuk akar: (√(x+q) − p)/(x − (p²−q))</option>
+                                    <option value="trig">Trigonometri: sin(px)/(qx), x → 0</option>
+                                </select></div>
+                            <div><label class="block font-bold text-slate-300 mb-1">Nilai p</label><input type="number" id="cu-p" value="3" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white"></div>
+                            <div id="cu-q-wrap" class="hidden"><label class="block font-bold text-slate-300 mb-1">Nilai q</label><input type="number" id="cu-qv" value="1" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white"></div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="button" onclick="cuBuild()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-4 py-2 rounded-xl text-xs">Buat Soal</button>
+                            <button type="button" onclick="cuRandom()" class="bg-slate-800 hover:bg-slate-700 font-bold px-4 py-2 rounded-xl text-xs"><i class="fa-solid fa-shuffle"></i> Acak</button>
+                        </div>
+                        <p id="cu-msg" class="text-xs text-rose-400"></p>
+                        <div id="cu-work" class="hidden space-y-3">
+                            <div id="cu-problem" class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 text-sm text-center text-amber-300"></div>
+                            <div class="flex gap-2">
+                                <input type="text" id="cu-ans" placeholder="Jawaban (angka atau pecahan, mis. 1/6)" class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500">
+                                <button type="button" onclick="cuCheck()" class="bg-blue-600 hover:bg-blue-500 font-bold px-4 py-2 rounded-xl text-xs">Periksa</button>
+                            </div>
+                            <p id="cu-fb" class="text-xs"></p>
+                            <p id="cu-score" class="text-[11px] text-slate-400"></p>
+                        </div>
+                        <div id="exp3"></div>
+                    </div>
+
+                    <div id="cu-free" class="hidden space-y-4">
+                        <p class="text-xs text-slate-300">Ketik fungsi apa saja dengan variabel x, lalu tentukan titik a. Contoh: <code class="text-amber-300">(x^2-9)/(x-3)</code>, <code class="text-amber-300">sin(2x)/x</code>, <code class="text-amber-300">sqrt(x+4)</code>.</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+                            <div class="sm:col-span-3"><label class="block font-bold text-slate-300 mb-1">f(x) =</label><input type="text" id="fr-expr" value="(x^2-9)/(x-3)" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono"></div>
+                            <div><label class="block font-bold text-slate-300 mb-1">x mendekati a =</label><input type="text" id="fr-a" value="3" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white"></div>
+                        </div>
+                        <button type="button" onclick="frAnalyze()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-4 py-2 rounded-xl text-xs">Analisis Limit</button>
+                        <div id="fr-out"></div>
+                        <div id="exp4"></div>
+                    </div>
+
+                    <div class="flex justify-between items-center pt-2">
+                        <button onclick="navigatePage('page-step1')" class="text-xs text-slate-400 hover:text-white flex items-center gap-1"><i class="fa-solid fa-arrow-left"></i> Orientasi</button>
+                        <button onclick="navigatePage('page-step5')" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-2.5 rounded-xl text-xs flex items-center gap-2"><span>Refleksi</span><i class="fa-solid fa-arrow-right"></i></button>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- FOOTER BAR -->
+        <footer class="py-4 text-center text-xs text-slate-400 border-t border-slate-800/80 glass-card mt-auto relative z-10">
+            <p>© 2026 LMS Aplikasi Limit Fungsi | SMAN 2 Tasikmalaya</p>
+        </footer>
+
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        const studentData = {
+            nama: '',
+            kelas: '',
+            sekolah: '',
+            diag_score: 0,
+            lkpd1_a: '',
+            lkpd1_b: '',
+            lkpd1_score: 0,
+            lkpd2_a: '',
+            lkpd2_b: '',
+            lkpd2_score: 0,
+            post_score: 0,
+            refleksi: ''
+        };
+
+        let currentSlide = 1;
+        const totalSlides = 5;
+        let chart1Instance = null;
+
+        function handleLogin(event) {
+            event.preventDefault();
+            studentData.nama = document.getElementById('input-nama').value.trim();
+            studentData.kelas = document.getElementById('input-kelas').value.trim();
+            studentData.sekolah = document.getElementById('input-sekolah').value.trim();
+
+            if (!studentData.nama) return;
+
+            document.getElementById('nav-student-name').innerText = studentData.nama;
+            document.getElementById('nav-student-class').innerText = studentData.kelas;
+            document.getElementById('nav-school-info').innerText = studentData.sekolah;
+
+            document.getElementById('main-nav').classList.remove('hidden');
+            document.getElementById('syntax-stepper-bar').classList.remove('hidden');
+
+            navigatePage('page-step1');
+            updateProgress(1, 6, 'Sintaks 1: Orientasi Masalah');
+        }
+
+        function navigatePage(pageId) {
+            const pages = ['page-login', 'page-step1', 'page-step2', 'page-kelompok', 'page-step3', 'page-step4', 'page-step5', 'page-step6', 'page-custom'];
+            pages.forEach(p => {
+                const el = document.getElementById(p);
+                if (el) el.classList.add('hidden');
+            });
+
+            const target = document.getElementById(pageId);
+            if (target) {
+                target.classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
+            // Highlight Active Syntax Stepper Button
+            const stepMapping = {
+                'page-step1': { num: 1, label: 'Sintaks 1: Orientasi Masalah (Diagnostik)' },
+                'page-step2': { num: 2, label: 'Sintaks 2: Presentasi PPT Interaktif' },
+                'page-kelompok': { num: 2, btn: 'btn-kelompok', label: 'Sintaks 2: Pembagian & Data Kelompok' },
+                'page-step3': { num: 3, label: 'Sintaks 3: LKPD Penyelidikan 1 (Rendra)' },
+                'page-step4': { num: 4, label: 'Sintaks 4: LKPD Penyelidikan 2 (Hasbi)' },
+                'page-step5': { num: 5, label: 'Sintaks 5: Refleksi Deep Learning & Post-Test' },
+                'page-step6': { num: 6, label: 'Hasil Akhir & Rekapan PDF' },
+                'page-custom': { num: 7, label: 'Latihan Mandiri Kustom (Fitur Tambahan)' }
+            };
+
+            if (stepMapping[pageId]) {
+                const info = stepMapping[pageId];
+                if (info.num < 7) updateProgress(info.num, 6, info.label); else document.getElementById('step-label').innerText = info.label;
+
+                document.querySelectorAll('.step-nav-btn').forEach((btn, idx) => {
+                    if (btn.id === (info.btn || 'btn-step' + info.num)) {
+                        btn.className = "step-nav-btn flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-400 bg-amber-500/20 text-amber-300 font-extrabold whitespace-nowrap shadow-md shadow-amber-500/10";
+                    } else {
+                        btn.className = "step-nav-btn flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-700/60 bg-slate-900 text-slate-300 hover:text-amber-400 whitespace-nowrap transition";
+                    }
+                });
+            }
+
+            if (window.MathJax) {
+                MathJax.typesetPromise();
+            }
+
+            if (pageId === 'page-kelompok') kelAuto();
+            if (pageId === 'page-step3') setTimeout(() => EXP[1].init(), 100);
+            if (pageId === 'page-step4') setTimeout(() => EXP[2].init(), 100);
+            if (pageId === 'page-custom') { cuTypeChange(); setTimeout(() => { EXP[3].init(); }, 100); }
+        }
+
+        function updateProgress(step, total, label) {
+            const pct = Math.round((step / total) * 100);
+            document.getElementById('progress-bar').style.width = `${pct}%`;
+            document.getElementById('progress-percent').innerText = `${pct}% Selesai`;
+            document.getElementById('step-label').innerText = label;
+        }
+
+        function submitStep1() {
+            const q1 = document.querySelector('input[name="diag_q1"]:checked')?.value;
+            const q2 = document.querySelector('input[name="diag_q2"]:checked')?.value;
+
+            let score = 0;
+            if (q1 === 'B') score += 50;
+            if (q2 === 'A') score += 50;
+            studentData.diag_score = score;
+
+            navigatePage('page-step2');
+        }
+
+        // PPT Slide Controller
+        function changeSlide(direction) {
+            currentSlide += direction;
+            if (currentSlide < 1) currentSlide = 1;
+            if (currentSlide > totalSlides) currentSlide = totalSlides;
+
+            for (let i = 1; i <= totalSlides; i++) {
+                const slideEl = document.getElementById(`ppt-slide-${i}`);
+                if (slideEl) slideEl.classList.add('hidden');
+            }
+
+            const activeSlide = document.getElementById(`ppt-slide-${currentSlide}`);
+            if (activeSlide) activeSlide.classList.remove('hidden');
+
+            document.getElementById('slide-indicator').innerText = `Slide ${currentSlide} dari ${totalSlides}`;
+            document.getElementById('btn-prev-slide').disabled = (currentSlide === 1);
+            document.getElementById('btn-next-slide').disabled = (currentSlide === totalSlides);
+
+            if (window.MathJax) MathJax.typesetPromise();
+        }
+
+        function toggleScaffold(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.toggle('hidden');
+        }
+
+        function calculateSimLimit() {
+            const val = parseFloat(document.getElementById('sim-x-val').value);
+            if (isNaN(val)) return;
+            const res = (Math.pow(val, 3) - 1000) / (val - 10);
+            document.getElementById('sim-result').innerText = `v(${val}) = ${res.toFixed(2)} Mbps (Mendekati 300 Mbps)`;
+            if (typeof EXP !== 'undefined' && EXP[1]) EXP[1].setX(val);
+        }
+
+        function submitStep3() {
+            const ansA = parseFloat(document.getElementById('lkpd1_ans_a').value);
+            studentData.lkpd1_a = document.getElementById('lkpd1_ans_a').value;
+            studentData.lkpd1_b = document.getElementById('lkpd1_ans_b').value;
+            studentData.lkpd1_score = (ansA === 300) ? 100 : 70;
+
+            navigatePage('page-step4');
+        }
+
+        function submitStep4() {
+            const ansA = parseFloat(document.getElementById('lkpd2_ans_a').value);
+            studentData.lkpd2_a = document.getElementById('lkpd2_ans_a').value;
+            studentData.lkpd2_b = document.getElementById('lkpd2_ans_b').value;
+            studentData.lkpd2_score = (ansA === 8) ? 100 : 70;
+
+            navigatePage('page-step5');
+        }
+
+        function finishLMS() {
+            if (kelMissing()) { kelAsk('Isi nama kelompok dan anggota terlebih dahulu agar tercantum di rekapan.'); return; }
+            const postVal = document.querySelector('input[name="post_q1"]:checked')?.value;
+            studentData.refleksi = document.getElementById('refleksi_text').value;
+
+            studentData.post_score = (postVal === '1000') ? 100 : 60;
+
+            document.getElementById('pdf-student-name').innerText = studentData.nama;
+            document.getElementById('pdf-student-class').innerText = studentData.kelas;
+            document.getElementById('pdf-student-school').innerText = studentData.sekolah;
+            document.getElementById('report-school').innerText = studentData.sekolah;
+
+            document.getElementById('score-diag').innerText = `${studentData.diag_score}/100`;
+            document.getElementById('score-lkpd1').innerText = `${studentData.lkpd1_score}/100`;
+            document.getElementById('score-lkpd2').innerText = `${studentData.lkpd2_score}/100`;
+            document.getElementById('score-post').innerText = `${studentData.post_score}/100`;
+
+            document.getElementById('pdf-ans-lkpd1-b').innerText = studentData.lkpd1_b || 'Tidak diisi';
+            document.getElementById('pdf-ans-lkpd2-b').innerText = studentData.lkpd2_b || 'Tidak diisi';
+            document.getElementById('pdf-ans-refleksi').innerText = studentData.refleksi || 'Tidak diisi';
+
+            document.getElementById('report-date').innerText = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+            const avg = Math.round((studentData.diag_score + studentData.lkpd1_score + studentData.lkpd2_score + studentData.post_score) / 4);
+            document.getElementById('report-status').innerText = avg >= 80 ? `Status: Tuntas (${avg})` : `Status: Belum tuntas (${avg})`;
+            const kl = studentData.kelompok, ol = document.getElementById('pdf-kelompok-anggota');
+            document.getElementById('pdf-kelompok-nama').innerText = kl.nama || 'Belum diisi';
+            ol.innerHTML = ''; kl.anggota.forEach(n => { const li = document.createElement('li'); li.textContent = n; ol.appendChild(li); });
+            const cu = studentData.custom;
+            document.getElementById('pdf-ans-custom').innerText = cu.n ? `${cu.ok} benar dari ${cu.n} soal latihan` : 'Belum mengerjakan';
+
+            navigatePage('page-step6');
+        }
+
+/* ===== EXPLORER GRAFIK INTERAKTIF + PROSES PENGERJAAN ===== */
+const EXP = {};
+const holeBg = () => (document.body.classList.contains('theme-light') ? '#ffffff' : '#0b1329');
+const sgn = n => (n >= 0 ? '+' + n : '' + n);
+const cst = n => (n === 0 ? '' : sgn(n));
+const fmt = v => (Math.abs(v) >= 1e6 ? v.toExponential(2) : (+v.toFixed(4)).toString());
+const typeset = el => { if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise(el ? [el] : undefined); };
+
+function mkSteps(o) {
+    return [
+        `<b>Langkah 1 – Substitusi langsung.</b> Ganti \\(x=${o.a}\\): pembilang dan penyebut sama-sama menjadi 0, sehingga hasilnya \\(\\frac{0}{0}\\) (bentuk tak tentu). Pada grafik, titik di \\(x=${o.a}\\) berupa <b>lubang</b>: fungsi tidak terdefinisi di sana, tetapi kurvanya tetap "menuju" suatu nilai.`,
+        `<b>Langkah 2 – Pendekatan numerik.</b> Titik biru bergerak mendekati \\(x=${o.a}\\) dari kiri dan kanan. Nilai \\(f(x)\\) dari kedua sisi sama-sama menuju \\(${o.Ltex}\\) (garis ungu putus-putus).`,
+        `<b>Langkah 3 – Manipulasi aljabar.</b> ${o.fac}`,
+        `<b>Langkah 4 – Sederhanakan, lalu substitusi.</b> ${o.simp} Garis hijau putus-putus adalah fungsi hasil penyederhanaan: sama dengan \\(f(x)\\) kecuali lubangnya tertutup.`,
+        `<b>Langkah 5 – Kesimpulan.</b> \\(\\displaystyle\\lim_{x\\to ${o.a}} f(x)=${o.Ltex}\\). ${o.ctx || ''}`
+    ];
+}
+
+class LimitExplorer {
+    constructor(id, cfg) { this.id = id; this.root = document.getElementById(id); this.chart = null; if (cfg) this.set(cfg); }
+    set(c) {
+        this.c = c; this.x = c.a - (c.xmax - c.xmin) / 4; this.trail = []; this.step = 0; clearInterval(this.timer);
+        const id = this.id;
+        this.root.innerHTML = `<div class="space-y-3 bg-slate-900/90 p-3 rounded-xl border border-slate-800">
+            <div class="flex justify-between items-center gap-2"><h3 class="text-xs font-bold text-amber-400 uppercase"><i class="fa-solid fa-chart-line"></i> Grafik Interaktif${c.title ? ': ' + c.title : ''}</h3><span class="text-[10px] text-slate-400">Klik grafik / geser slider</span></div>
+            <div class="h-64 relative"><canvas id="cv-${id}"></canvas></div>
+            <div class="flex flex-wrap items-center gap-2 text-[11px]">
+                <input type="range" id="sl-${id}" class="flex-1 min-w-[150px] accent-amber-500" min="${c.xmin}" max="${c.xmax}" step="0.01" value="${this.x}">
+                <button type="button" id="bl-${id}" class="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 font-bold">Dekati dari kiri</button>
+                <button type="button" id="br-${id}" class="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 font-bold">Dekati dari kanan</button>
+            </div>
+            <div id="ro-${id}" class="font-mono text-[11px] text-emerald-400 bg-slate-950 p-2 rounded-lg border border-slate-800"></div>
+            ${c.steps ? `<div class="flex flex-wrap gap-1" id="sb-${id}">${c.steps.map((s, i) => `<button type="button" data-i="${i}" class="px-2.5 py-1 rounded-lg text-[11px] font-bold border border-slate-700 bg-slate-800 text-slate-300">Langkah ${i + 1}</button>`).join('')}</div>
+            <div id="st-${id}" class="p-3 bg-purple-950/40 border border-purple-800/50 rounded-lg text-[11px] text-purple-100 leading-relaxed min-h-[64px]">Pilih Langkah 1–5 untuk melihat proses pengerjaan, lengkap dengan animasi pada grafik.</div>` : ''}</div>`;
+        document.getElementById('sl-' + id).oninput = e => this.setX(parseFloat(e.target.value));
+        document.getElementById('bl-' + id).onclick = () => this.approach([-1]);
+        document.getElementById('br-' + id).onclick = () => this.approach([1]);
+        const sb = document.getElementById('sb-' + id);
+        if (sb) sb.querySelectorAll('button').forEach(b => b.onclick = () => this.setStep(+b.dataset.i));
+    }
+    init() {
+        const c = this.c; if (!c) return;
+        const cv = document.getElementById('cv-' + this.id); if (!cv) return;
+        if (this.chart) this.chart.destroy();
+        const N = 240, h = (c.xmax - c.xmin) / N, pts = [];
+        for (let i = 0; i <= N; i++) {
+            const x = c.xmin + h * i;
+            if (Math.abs(x - c.a) < h / 2) { pts.push({ x: c.a, y: null }); continue; }
+            const y = c.f(x); pts.push({ x, y: isFinite(y) ? y : null });
+        }
+        const hasL = c.L !== null && isFinite(c.L);
+        const ys = pts.filter(p => p.y !== null && Math.abs(p.x - c.a) > (c.xmax - c.xmin) * 0.04).map(p => p.y);
+        if (hasL) ys.push(c.L);
+        let lo = Math.min(...ys), hi = Math.max(...ys); const pad = (hi - lo) * 0.12 || 1;
+        const ov = pts.map(p => (p.y === null && p.x === c.a && hasL) ? { x: c.a, y: c.L } : p);
+        const lt = document.body.classList.contains('theme-light'), tk = { color: lt ? '#64748b' : '#94a3b8', font: { size: 9 } }, gr = { color: lt ? '#e2e8f0' : '#1e293b' };
+        this.chart = new Chart(cv.getContext('2d'), {
+            type: 'scatter',
+            data: { datasets: [
+                { data: pts, showLine: true, borderColor: '#f59e0b', borderWidth: 2, pointRadius: 0, spanGaps: false },
+                { data: ov, showLine: true, borderColor: '#34d399', borderWidth: 2, borderDash: [6, 4], pointRadius: 0, hidden: true },
+                { data: hasL ? [{ x: c.xmin, y: c.L }, { x: c.xmax, y: c.L }] : [], showLine: true, borderColor: '#a78bfa', borderWidth: 1.5, borderDash: [4, 4], pointRadius: 0, hidden: true },
+                { data: hasL ? [{ x: c.a, y: c.L }] : [], pointRadius: 7, pointStyle: 'circle', backgroundColor: holeBg(), borderColor: '#ef4444', borderWidth: 2 },
+                { data: [], pointRadius: 4, backgroundColor: '#3b82f6' },
+                { data: [], pointRadius: 6, backgroundColor: '#f43f5e' }
+            ] },
+            options: {
+                responsive: true, maintainAspectRatio: false, animation: false,
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: t => `x=${fmt(t.parsed.x)}, y=${fmt(t.parsed.y)}` } } },
+                scales: { x: { type: 'linear', min: c.xmin, max: c.xmax, grid: gr, ticks: tk }, y: { min: c.ymin !== undefined ? c.ymin : lo - pad, max: c.ymax !== undefined ? c.ymax : hi + pad, grid: gr, ticks: tk } },
+                onClick: (e, _, ch) => this.setX(ch.scales.x.getValueForPixel(e.x))
+            }
+        });
+        this.setX(this.x); this.refresh();
+    }
+    refresh() {
+        const ch = this.chart; if (!ch) return; const s = this.step, d = ch.data.datasets;
+        d[1].hidden = s < 4; d[2].hidden = s < 2 || s === 0;
+        d[3].backgroundColor = s >= 4 ? '#10b981' : holeBg(); d[3].borderColor = s >= 4 ? '#10b981' : '#ef4444'; 
+        d[4].data = this.trail; ch.update('none');
+    }
+    setX(v) {
+        const c = this.c; if (!c || isNaN(v)) return;
+        v = Math.min(c.xmax, Math.max(c.xmin, v)); this.x = v;
+        const sl = document.getElementById('sl-' + this.id); if (sl) sl.value = v;
+        const hit = Math.abs(v - c.a) < 0.005, y = hit ? null : c.f(v);
+        if (this.chart) { this.chart.data.datasets[5].data = (y !== null && isFinite(y)) ? [{ x: v, y }] : []; this.chart.update('none'); }
+        const ro = document.getElementById('ro-' + this.id); if (!ro) return;
+        const hasL = c.L !== null && isFinite(c.L);
+        ro.innerHTML = hit ? `x = ${fmt(c.a)} → f(x) tidak terdefinisi (0/0), tetapi f(x) mendekati ${hasL ? fmt(c.L) : '?'} dari kedua sisi`
+            : `x = ${fmt(v)} → f(x) = ${isFinite(y) ? fmt(y) : 'tak terdefinisi'}` + (hasL && isFinite(y) ? ` | selisih dari L = ${fmt(Math.abs(y - c.L))}` : '');
+    }
+    approach(dirs) {
+        const c = this.c; clearInterval(this.timer); this.trail = []; let k = 1;
+        const span = (c.xmax - c.xmin) / 2;
+        this.timer = setInterval(() => {
+            const dd = span / Math.pow(2, k);
+            dirs.forEach(s => { const x = c.a + s * dd; this.trail.push({ x, y: c.f(x) }); });
+            this.setX(c.a + dirs[dirs.length - 1] * dd); this.refresh();
+            if (++k > 9) clearInterval(this.timer);
+        }, 450);
+    }
+    setStep(i) {
+        this.step = i + 1; clearInterval(this.timer);
+        document.querySelectorAll('#sb-' + this.id + ' button').forEach((b, j) => {
+            b.className = 'px-2.5 py-1 rounded-lg text-[11px] font-bold border ' + (j === i ? 'border-amber-400 bg-amber-500/20 text-amber-300' : 'border-slate-700 bg-slate-800 text-slate-300');
+        });
+        const st = document.getElementById('st-' + this.id); st.innerHTML = this.c.steps[i]; typeset(st);
+        this.trail = [];
+        if (i === 0) this.setX(this.c.a);
+        if (i === 1) this.approach([-1, 1]);
+        this.refresh();
+    }
+}
+
+EXP[1] = new LimitExplorer('exp1', { title: 'Kasus Rendra', f: x => (Math.pow(x, 3) - 1000) / (x - 10), a: 10, L: 300, xmin: 6, xmax: 14,
+    steps: mkSteps({ a: 10, Ltex: '300', fac: 'Gunakan \\(a^3-b^3=(a-b)(a^2+ab+b^2)\\) sehingga \\(x^3-1000=(x-10)(x^2+10x+100)\\).',
+        simp: 'Faktor \\((x-10)\\) dicoret: \\(f(x)=x^2+10x+100\\) untuk \\(x\\neq 10\\). Substitusi \\(x=10\\): \\(100+100+100=300\\).', ctx: 'Kecepatan unduhan mendekati 300 Mbps.' }) });
+EXP[2] = new LimitExplorer('exp2', { title: 'Kasus Hasbi', f: x => (x * x - 16) / (x - 4), a: 4, L: 8, xmin: 0, xmax: 8,
+    steps: mkSteps({ a: 4, Ltex: '8', fac: 'Faktorkan pembilang: \\(x^2-16=(x-4)(x+4)\\).',
+        simp: 'Coret \\((x-4)\\): \\(f(x)=x+4\\) untuk \\(x\\neq 4\\). Substitusi \\(x=4\\): \\(4+4=8\\).', ctx: 'Keuntungan mendekati 8 miliar rupiah.' }) });
+EXP[3] = new LimitExplorer('exp3'); EXP[4] = new LimitExplorer('exp4');
+function initChart1() { EXP[1].init(); }
+
+/* ===== LATIHAN MANDIRI KUSTOM ===== */
+studentData.custom = { n: 0, ok: 0, hist: [] };
+let curQ = null;
+const TYPES = {
+    sq: { n: 'Selisih kuadrat: (x² − p²)/(x − p)', q: false, make: (p) => ({ a: p, L: 2 * p, Ltex: '' + 2 * p, xmin: p - 4, xmax: p + 4,
+        tex: `\\frac{x^2${cst(-p * p)}}{x${cst(-p)}}`, pl: `(x^2${cst(-p * p)})/(x${cst(-p)})`, f: x => (x * x - p * p) / (x - p),
+        fac: `\\(x^2${cst(-p * p)}=(x${cst(-p)})(x${cst(p)})\\).`, simp: `Coret \\((x${cst(-p)})\\): \\(f(x)=x${cst(p)}\\). Substitusi \\(x=${p}\\): \\(${2 * p}\\).` }) },
+    tri: { n: 'Trinomial: (x² − (p+q)x + pq)/(x − p)', q: true, make: (p, q) => ({ a: p, L: p - q, Ltex: '' + (p - q), xmin: p - 4, xmax: p + 4,
+        tex: `\\frac{x^2${lin(-(p + q))}${cst(p * q)}}{x${cst(-p)}}`, pl: `(x^2${lin(-(p + q))}${cst(p * q)})/(x${cst(-p)})`, f: x => (x * x - (p + q) * x + p * q) / (x - p),
+        fac: `Pembilang difaktorkan: \\((x${cst(-p)})(x${cst(-q)})\\).`, simp: `Coret \\((x${cst(-p)})\\): \\(f(x)=x${cst(-q)}\\). Substitusi \\(x=${p}\\): \\(${p - q}\\).` }) },
+    cub: { n: 'Selisih kubik: (x³ − p³)/(x − p)', q: false, make: (p) => ({ a: p, L: 3 * p * p, Ltex: '' + 3 * p * p, xmin: p - 3, xmax: p + 3,
+        tex: `\\frac{x^3${cst(-(p ** 3))}}{x${cst(-p)}}`, pl: `(x^3${cst(-(p ** 3))})/(x${cst(-p)})`, f: x => (x ** 3 - p ** 3) / (x - p),
+        fac: `Gunakan \\(a^3-b^3=(a-b)(a^2+ab+b^2)\\): \\(x^3${cst(-(p ** 3))}=(x${cst(-p)})(x^2${lin(p)}${cst(p * p)})\\).`,
+        simp: `Coret \\((x${cst(-p)})\\): \\(f(x)=x^2${lin(p)}${cst(p * p)}\\). Substitusi \\(x=${p}\\): \\(${3 * p * p}\\).` }) },
+    akar: { n: 'Bentuk akar: (√(x+q) − p)/(x − (p²−q)), p > 0', q: true, make: (p, q) => { const a = p * p - q; return { a, L: 1 / (2 * p), Ltex: `\\frac{1}{${2 * p}}`,
+        xmin: Math.max(a - 4, -q + 0.01), xmax: a + 6, tex: `\\frac{\\sqrt{x${cst(q)}}-${p}}{x${cst(-a)}}`, pl: `(sqrt(x${cst(q)})-${p})/(x${cst(-a)})`, f: x => (Math.sqrt(x + q) - p) / (x - a),
+        fac: `Kalikan dengan sekawan \\(\\sqrt{x${cst(q)}}+${p}\\): pembilang menjadi \\(x${cst(q)}-${p * p}=x${cst(-a)}\\).`,
+        simp: `Coret \\((x${cst(-a)})\\): \\(f(x)=\\frac{1}{\\sqrt{x${cst(q)}}+${p}}\\). Substitusi \\(x=${a}\\): \\(\\frac{1}{${2 * p}}\\).` }; } },
+    trig: { n: 'Trigonometri: sin(px)/(qx), x → 0', q: true, make: (p, q) => ({ a: 0, L: p / q, Ltex: `\\frac{${p}}{${q}}`, xmin: -2 * Math.PI / Math.abs(p), xmax: 2 * Math.PI / Math.abs(p),
+        tex: `\\frac{\\sin ${p}x}{${q}x}`, pl: `sin(${p}x)/(${q}x)`, f: x => Math.sin(p * x) / (q * x),
+        fac: `Ubah ke bentuk baku: \\(\\frac{\\sin ${p}x}{${q}x}=\\frac{${p}}{${q}}\\cdot\\frac{\\sin ${p}x}{${p}x}\\).`, simp: `Gunakan \\(\\lim_{u\\to0}\\frac{\\sin u}{u}=1\\): hasilnya \\(\\frac{${p}}{${q}}\\cdot 1=\\frac{${p}}{${q}}\\).` }) }
+};
+function lin(c) { return c === 0 ? '' : c === 1 ? '+x' : c === -1 ? '-x' : sgn(c) + 'x'; }
+function cuTab(t) {
+    document.getElementById('cu-gen').classList.toggle('hidden', t !== 'gen');
+    document.getElementById('cu-free').classList.toggle('hidden', t !== 'free');
+    setTimeout(() => (t === 'gen' ? EXP[3] : EXP[4]).init(), 80);
+}
+function cuTypeChange() { const t = TYPES[document.getElementById('cu-type').value]; document.getElementById('cu-q-wrap').classList.toggle('hidden', !t.q); }
+function cuRandom() {
+    const k = Object.keys(TYPES)[Math.floor(Math.random() * 5)]; document.getElementById('cu-type').value = k; cuTypeChange();
+    const r = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a, nz = () => { let v = 0; while (!v) v = r(-5, 5); return v; };
+    document.getElementById('cu-p').value = k === 'akar' ? r(1, 5) : (k === 'trig' ? nz() : nz());
+    document.getElementById('cu-qv').value = k === 'akar' ? r(-3, 5) : nz(); cuBuild();
+}
+function cuBuild() {
+    const k = document.getElementById('cu-type').value, T = TYPES[k];
+    const p = parseInt(document.getElementById('cu-p').value), q = parseInt(document.getElementById('cu-qv').value);
+    const msg = document.getElementById('cu-msg');
+    if (isNaN(p) || (T.q && isNaN(q))) { msg.innerText = 'Isi parameter dengan bilangan bulat.'; return; }
+    if ((k === 'akar' && p < 1) || (k === 'trig' && (p === 0 || q === 0))) { msg.innerText = k === 'akar' ? 'Untuk soal akar, p harus bilangan bulat positif.' : 'p dan q tidak boleh 0.'; return; }
+    msg.innerText = ''; const s = T.make(p, q); curQ = { s, counted: false };
+    document.getElementById('cu-problem').innerHTML = `Tentukan nilai dari: $$\\lim_{x \\to ${s.a}} ${s.tex}$$`;
+    document.getElementById('cu-ans').value = ''; document.getElementById('cu-fb').innerText = ''; document.getElementById('cu-work').classList.remove('hidden');
+    EXP[3].set({ title: 'Soal Kustom', f: s.f, a: s.a, L: s.L, xmin: s.xmin, xmax: s.xmax, steps: mkSteps(s) }); EXP[3].init(); typeset(document.getElementById('cu-problem'));
+}
+function cuCheck() {
+    if (!curQ) return; let v = document.getElementById('cu-ans').value.replace(',', '.').trim(), n;
+    const m = v.match(/^(-?[\d.]+)\s*\/\s*(-?[\d.]+)$/); n = m ? parseFloat(m[1]) / parseFloat(m[2]) : Number(v);
+    const fb = document.getElementById('cu-fb'); if (v === '' || isNaN(n)) { fb.className = 'text-xs text-amber-300'; fb.innerText = 'Masukkan angka atau pecahan, contoh 1/6.'; return; }
+    const ok = Math.abs(n - curQ.s.L) < 0.01;
+    if (!curQ.counted) { curQ.counted = true; studentData.custom.n++; if (ok) studentData.custom.ok++; studentData.custom.hist.push({ q: `lim x->${curQ.s.a} ${curQ.s.pl}`, ans: v, key: fmt(curQ.s.L), ok }); }
+    fb.className = 'text-xs font-bold ' + (ok ? 'text-emerald-400' : 'text-rose-400');
+    fb.innerText = ok ? 'Benar! Buka Langkah 1–5 pada grafik untuk memeriksa prosesnya.' : 'Belum tepat. Coba amati grafik dan Langkah 1–5, lalu coba lagi.';
+    document.getElementById('cu-score').innerText = `Skor latihan: ${studentData.custom.ok} benar dari ${studentData.custom.n} soal`;
+}
+function safeFn(src) {
+    let e = src.toLowerCase().replace(/\s+/g, '').replace(/,/g, '.');
+    if (!e) throw new Error('Fungsi kosong');
+    if (!/^[0-9a-z+\-*/^().]*$/.test(e)) throw new Error('Ada karakter yang tidak diizinkan');
+    (e.match(/[a-z]+/g) || []).forEach(t => { if (!['x', 'sin', 'cos', 'tan', 'sqrt', 'abs', 'ln', 'pi', 'e'].includes(t)) throw new Error('Fungsi "' + t + '" tidak dikenal'); });
+    e = e.replace(/(\d|\))(?=x|\(|[a-df-z])/g, '$1*').replace(/(x)(?=\d|\(|[a-z])/g, '$1*').replace(/\)(?=\d)/g, ')*');
+    e = e.replace(/\^/g, '**').replace(/\b(sin|cos|tan|sqrt|abs)\b/g, 'Math.$1').replace(/\bln\b/g, 'Math.log').replace(/\bpi\b/g, 'Math.PI').replace(/\be\b/g, 'Math.E');
+    const fn = new Function('x', '"use strict";return (' + e + ');'); fn(1); return fn;
+}
+function frAnalyze() {
+    const out = document.getElementById('fr-out'); let f;
+    const a = parseFloat(document.getElementById('fr-a').value.replace(',', '.'));
+    try { if (isNaN(a)) throw new Error('Nilai a harus berupa angka'); f = safeFn(document.getElementById('fr-expr').value); } catch (err) { out.innerHTML = `<span class="text-rose-400">${err.message}. Contoh: (x^2-9)/(x-3), sin(2x)/x, sqrt(x+4)</span>`; return; }
+    const ds = [1, 0.1, 0.01, 0.001, 0.0001]; let rows = '';
+    ds.forEach(d => { rows += `<tr><td class="px-2">${d}</td><td class="px-2">${fmt(f(a - d))}</td><td class="px-2">${fmt(f(a + d))}</td></tr>`; });
+    const l = f(a - 1e-5), r = f(a + 1e-5), ex = isFinite(l) && isFinite(r) && Math.abs(l - r) < 1e-2 * (1 + Math.abs(l));
+    const L = ex ? (l + r) / 2 : null;
+    out.innerHTML = `<table class="text-[11px] font-mono text-slate-300 border border-slate-700 rounded"><tr class="text-amber-400"><th class="px-2">δ</th><th class="px-2">f(a−δ)</th><th class="px-2">f(a+δ)</th></tr>${rows}</table>
+        <p class="mt-2 text-xs font-bold ${ex ? 'text-emerald-400' : 'text-rose-400'}">${ex ? `Limit kiri ≈ limit kanan, sehingga limit ada dan ≈ ${fmt(+L.toFixed(3))}` : 'Limit kiri ≠ limit kanan atau tak terhingga, sehingga limit tidak ada'}</p>
+        <p class="text-[10px] text-slate-400">Catatan: sudut trigonometri dalam radian. Nilai limit ini hasil pendekatan numerik.</p>`;
+    EXP[4].set({ title: 'Fungsi Bebas', f, a, L, xmin: a - 5, xmax: a + 5, steps: null }); EXP[4].init();
+}
+
+/* ===== UNDUH PDF (dibuat langsung dengan jsPDF, tanpa html2canvas) ===== */
+function downloadPDF() {
+    if (kelMissing()) { kelAsk('Isi nama kelompok dan anggota terlebih dahulu agar tercantum di PDF.'); return; }
+    try {
+        const J = window.jspdf && window.jspdf.jsPDF;
+        if (!J) throw new Error('Pustaka jsPDF belum termuat. Periksa koneksi internet lalu muat ulang halaman.');
+        const d = new J({ unit: 'mm', format: 'a4' }), M = 16, W = 178; let y = 18;
+        const cl = s => String(s == null ? '' : s).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^\x20-\x7E\n]/g, '?');
+        const P = (t, sz = 10, b = false, col = [30, 41, 59], gap = 1.5) => {
+            d.setFont('helvetica', b ? 'bold' : 'normal'); d.setFontSize(sz); d.setTextColor(col[0], col[1], col[2]);
+            d.splitTextToSize(cl(t), W).forEach(l => { if (y > 280) { d.addPage(); y = 18; } d.text(l, M, y); y += sz * 0.42 + 1.4; }); y += gap;
+        };
+        const HR = () => { d.setDrawColor(203, 213, 225); d.line(M, y, M + W, y); y += 5; };
+        const s = studentData, c = s.custom, avg = Math.round((s.diag_score + s.lkpd1_score + s.lkpd2_score + s.post_score) / 4);
+        P('REKAPAN HASIL BELAJAR LMS LIMIT', 16, true, [180, 110, 0], 0);
+        P('Mata Pelajaran: Matematika Tingkat Lanjut (Fase F)'); P(s.sekolah, 10, false, [100, 116, 139]);
+        P('Tanggal: ' + document.getElementById('report-date').innerText, 10, false, [100, 116, 139]); HR();
+        P('Nama Siswa : ' + s.nama, 11, true); P('Kelas : ' + s.kelas); P('Sekolah : ' + s.sekolah); HR();
+        P('KELOMPOK PENGERJAAN LKPD', 12, true, [30, 64, 175]); P('Nama Kelompok : ' + (s.kelompok.nama || 'Belum diisi'), 10, true);
+        if (s.kelompok.anggota.length) { P('Anggota:', 10, false, [30, 41, 59], 0); s.kelompok.anggota.forEach((n, i) => P(`${i + 1}. ${n}`, 10, false, [30, 41, 59], 0)); y += 2; } HR();
+        P('NILAI', 12, true, [30, 64, 175]);
+        P(`Tes Diagnostik : ${s.diag_score}/100`); P(`LKPD 1 (Rendra) : ${s.lkpd1_score}/100`); P(`LKPD 2 (Hasbi) : ${s.lkpd2_score}/100`); P(`Post-Test Biologi : ${s.post_score}/100`);
+        P(`Rata-rata : ${avg}/100  (${avg >= 80 ? 'Tuntas' : 'Belum tuntas'}, target 80)`, 11, true, [5, 120, 85]); HR();
+        P('LATIHAN MANDIRI KUSTOM', 12, true, [30, 64, 175]);
+        P(c.n ? `Soal dikerjakan: ${c.n} | Benar: ${c.ok}` : 'Belum mengerjakan latihan mandiri.');
+        c.hist.forEach((h, i) => P(`${i + 1}. ${h.q} | Jawaban: ${h.ans} | Kunci: ${h.key} | ${h.ok ? 'Benar' : 'Salah'}`, 9)); HR();
+        P('DETAIL JAWABAN', 12, true, [30, 64, 175]);
+        P('LKPD 1 - jawaban akhir: ' + (s.lkpd1_a || '-') + ' Mbps'); P('Analisis LKPD 1: ' + (s.lkpd1_b || 'Tidak diisi'));
+        P('LKPD 2 - jawaban akhir: ' + (s.lkpd2_a || '-')); P('Analisis LKPD 2: ' + (s.lkpd2_b || 'Tidak diisi'));
+        P('Refleksi Siswa: ' + (s.refleksi || 'Tidak diisi'), 10, false, [30, 41, 59], 6);
+        if (y > 245) { d.addPage(); y = 18; }
+        y += 4; d.setFontSize(10); d.setFont('helvetica', 'normal'); d.setTextColor(71, 85, 105);
+        d.text('Mengetahui,', M, y); d.text('Penyusun Modul & LMS,', M + W, y, { align: 'right' }); y += 22;
+        d.setFont('helvetica', 'bold'); d.text('Guru Mata Pelajaran', M, y); d.text('Yudan Sudarman', M + W, y, { align: 'right' }); y += 5;
+        d.setFont('helvetica', 'normal'); d.text('Yuvi Nuri Khoeriyah, M.Pd', M, y); d.text('NPM 232151127', M + W, y, { align: 'right' });
+        d.save(`Rekapan_LMS_Limit_${(s.nama || 'Siswa').replace(/\s+/g, '_')}.pdf`);
+    } catch (err) { alert('Gagal membuat PDF: ' + err.message); }
+}
+
+
+        /* ===== DATA KELOMPOK ===== */
+        const GROUPS = {"1": ["Fathan Syamikh", "Carrisa Putri", "Renata Kayla", "Arrafi Revian", "M. Hasbi Assidiqi", "Salwa Nur Hamidah"], "2": ["Jenny Nurrahmania", "Chayara Putri", "Siti Isma Rohmani", "Fachri Khairul", "M. Radhitia Putra", "Sahira Mayza"], "3": ["Khaerunnisa Zahirah", "Zulaika Najmutsaaqib", "Fatimah Ahmad", "Zuleikha Hafitrie", "Gammar Rhainur", "Rendra Putra Arifin"], "4": ["Naila Shada Hazimah", "Arni Rahman", "Julian Nur Habibah", "M. Aufa Kurnia", "Saprudin", "Muhamad Raevan"], "5": ["Salma Wafa", "Astrella Nafeesa", "Khaulah Arrasyidah", "M. Ganezia Rinaldi", "Zaidan Ibnu Athoillah", "Paramitha Nur"], "6": ["Rais Ardianto", "Nazwa Ramadhani", "M. Haikal Sudiana", "Amira Zarin", "Aura Sakyatun", "Darrel Putra"]};
+        studentData.kelompok = { nama: '', anggota: [] };
+        let kelReturn = false;
+        function kelSync() {
+            const ang = []; for (let i = 1; i <= 6; i++) { const v = document.getElementById('kel-m' + i).value.trim(); if (v) ang.push(v); }
+            studentData.kelompok = { nama: document.getElementById('kel-nama').value.trim(), anggota: ang };
+        }
+        function kelMissing() { const k = studentData.kelompok; return !k.nama || !k.anggota.length; }
+        function kelAsk(text) { kelReturn = true; navigatePage('page-kelompok'); document.getElementById('kel-msg').innerText = text; }
+        function kelFill(names) { for (let i = 1; i <= 6; i++) document.getElementById('kel-m' + i).value = names[i - 1] || ''; }
+        function kelPilih() {
+            const v = document.getElementById('kel-pilih').value; document.getElementById('kel-info').classList.add('hidden');
+            if (GROUPS[v]) { document.getElementById('kel-nama').value = 'Kelompok ' + v; kelFill(GROUPS[v]); }
+            else { document.getElementById('kel-nama').value = ''; kelFill([]); }
+            kelSync();
+        }
+        function kelAuto() {
+            const sel = document.getElementById('kel-pilih'), nm = (studentData.nama || '').toLowerCase().trim();
+            if (sel.value || !nm) return;
+            for (const k in GROUPS) if (GROUPS[k].some(m => { const x = m.toLowerCase(); return x.includes(nm) || nm.includes(x); })) {
+                sel.value = k; kelPilih();
+                const info = document.getElementById('kel-info'); info.innerText = `Namamu ditemukan di Kelompok ${k}. Periksa kembali dan sesuaikan jika perlu.`; info.classList.remove('hidden'); return;
+            }
+        }
+        function kelSubmit() {
+            const nama = document.getElementById('kel-nama').value.trim(), ang = [];
+            for (let i = 1; i <= 6; i++) { const v = document.getElementById('kel-m' + i).value.trim(); if (v) ang.push(v); }
+            const msg = document.getElementById('kel-msg');
+            if (!nama || !ang.length) { msg.innerText = 'Isi nama kelompok dan minimal satu nama anggota.'; return; }
+            msg.innerText = ''; studentData.kelompok = { nama, anggota: ang };
+            if (kelReturn) { kelReturn = false; finishLMS(); return; }
+            navigatePage('page-step3');
+        }
+
+        function toggleTheme(light) {
+            const b = document.body, on = typeof light === 'boolean' ? light : !b.classList.contains('theme-light');
+            b.classList.toggle('theme-light', on);
+            document.getElementById('theme-toggle').innerHTML = on ? '<i class="fa-solid fa-moon"></i> Tema Gelap' : '<i class="fa-solid fa-sun"></i> Tema Cerah';
+            try { localStorage.setItem('lms-theme', on ? 'light' : 'dark'); } catch (e) {}
+            Object.values(EXP).forEach(x => { const cv = document.getElementById('cv-' + x.id); if (x.chart && cv && cv.offsetParent !== null) x.init(); });
+        }
+        try { if (localStorage.getItem('lms-theme') === 'dark') toggleTheme(false); } catch (e) {}
+
+        ['input', 'change'].forEach(ev => document.getElementById('page-kelompok').addEventListener(ev, kelSync));
+
+        function resetLMS() {
+            location.reload();
+        }
+    </script>
+</body>
+</html>
